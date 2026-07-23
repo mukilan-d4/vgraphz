@@ -1,512 +1,157 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+
 import {
   MapPin,
   Phone,
   MessageCircle,
-  Send,
-  User,
-  CheckCircle,
-  Mail,
-  Trash2,
-  Edit,
-  Check,
-  X,
   Globe,
+  FolderOpen,
   Award,
   Languages,
-  Truck
+  Truck,
+  CheckCircle,
+  User
 } from "lucide-react";
-
-
-interface Review {
-  id:string;
-  provider_id:number;
-  rater_id:string;
-  review:string;
-  created_at:string;
-}
-
-
-
-interface Provider {
-
-id:number;
-
-name:string;
-
-email:string;
-
-category:string;
-
-district:string;
-
-about:string;
-
-profile_image:string;
-
-user_id:string;
-
-phone?:string;
-
-verified?:boolean;
-
-skills:any;
-
-languages:any;
-
-website?:string;
-
-youtube?:string;
-
-portfolio?:string;
-
-instagram?:string;
-
-experience?:string;
-
-location?:string;
-
-delivery?:string;
-
-}
-
-
 
 
 export default function ProviderDetailPage(){
 
-
 const params = useParams();
 
-const providerId = params.id as string;
+const id = params.id as string;
 
 
-
-const [provider,setProvider] = useState<Provider|null>(null);
-
-const [reviews,setReviews] = useState<Review[]>([]);
-
-const [reviewCount,setReviewCount] = useState(0);
-
+const [provider,setProvider] = useState<any>(null);
 const [loading,setLoading] = useState(true);
-
-const [currentUser,setCurrentUser] = useState<any>(null);
-
-const [error,setError] = useState("");
-
-const [reviewText,setReviewText] = useState("");
-
-const [submitting,setSubmitting] = useState(false);
 
 
 
 useEffect(()=>{
 
-fetchData();
+loadProvider();
 
-},[providerId]);
-
-
+},[]);
 
 
 
-async function fetchData(){
+async function loadProvider(){
 
 
-try{
-
-
-setLoading(true);
-
-
-
-const {
-data:{user}
-}=await supabase.auth.getUser();
-
-
-setCurrentUser(user);
-
-
-
-const {
-data:providerData,
-error:providerError
-
-}=await supabase
+const {data,error}=await supabase
 
 .from("videographers")
 
 .select("*")
 
-.eq(
-"id",
-Number(providerId)
-)
-
-.maybeSingle();
-
-
-
-
-
-if(providerError){
-
-console.log(providerError);
-
-setError(providerError.message);
-
-return;
-
-}
-
-
-
-
-if(!providerData){
-
-setError("Provider not found");
-
-return;
-
-}
-
-
-
-console.log(
-"PROVIDER DATA:",
-providerData
-);
-
-
-
-setProvider(providerData);
-
-
-
-
-
-const {
-data:reviewsData
-
-}=await supabase
-
-.from("reviews")
-
-.select("*")
-
-.eq(
-"provider_id",
-Number(providerId)
-)
-
-.order(
-"created_at",
-{
-ascending:false
-}
-);
-
-
-
-
-
-setReviews(
-reviewsData || []
-);
-
-
-setReviewCount(
-reviewsData?.length || 0
-);
-
-
-
-}
-
-catch(err:any){
-
-console.log(err);
-
-setError(
-err.message
-);
-
-}
-
-finally{
-
-setLoading(false);
-
-}
-
-
-}
-const getSkills = () => {
-
-  if (!provider?.skills) return [];
-
-  if (Array.isArray(provider.skills)) {
-    return provider.skills;
-  }
-
-  if (typeof provider.skills === "string") {
-
-    return provider.skills
-      .split(",")
-      .map((x:string)=>x.trim())
-      .filter(Boolean);
-
-  }
-
-  return [];
-
-};
-
-
-
-const getLanguages = () => {
-
-  if (!provider?.languages) return [];
-
-  if (Array.isArray(provider.languages)) {
-    return provider.languages;
-  }
-
-
-  if (typeof provider.languages === "string") {
-
-    return provider.languages
-      .split(",")
-      .map((x:string)=>x.trim())
-      .filter(Boolean);
-
-  }
-
-
-  return [];
-
-};
-
-
-
-
-
-
-async function handleSubmitReview(){
-
-
-if(!currentUser){
-
-setError(
-"Please login to leave a review"
-);
-
-return;
-
-}
-
-
-
-if(!reviewText.trim()){
-
-setError(
-"Write a review"
-);
-
-return;
-
-}
-
-
-
-try{
-
-
-setSubmitting(true);
-
-
-const {
-data,
-error
-
-}=await supabase
-
-.from("reviews")
-
-.insert({
-
-provider_id:Number(providerId),
-
-rater_id:currentUser.id,
-
-review:reviewText.trim()
-
-})
-
-.select()
+.eq("id",id)
 
 .single();
 
 
 
-
-
-if(error)
-throw error;
+console.log("PROVIDER DATA:",data);
 
 
 
-setReviews(
-[
-data,
-...reviews
-]
-);
+if(error){
 
-
-
-setReviewCount(
-reviewCount+1
-);
-
-
-
-setReviewText("");
-
-
+console.log(error);
 
 }
 
-catch(err:any){
 
-setError(
-err.message
-);
+setProvider(data);
 
-}
-
-finally{
-
-setSubmitting(false);
-
-}
-
+setLoading(false);
 
 
 }
 
 
 
+function convertArray(value:any){
 
+if(!value) return [];
 
+if(Array.isArray(value))
+return value;
 
-function handleCallNow(){
-
-if(provider?.phone){
-
-window.location.href =
-`tel:${provider.phone}`;
-
-}
-
-}
-
-
-
-
-
-function handleWhatsApp(){
-
-
-if(provider?.phone){
-
-
-window.open(
-
-`https://wa.me/${provider.phone}`,
-
-"_blank"
-
-);
-
+return value
+.split(",")
+.map((x:string)=>x.trim())
+.filter(Boolean);
 
 }
 
-}
+
+
 if(loading){
 
-return (
+return(
 
-<div className="min-h-screen flex items-center justify-center bg-slate-50">
+<div className="min-h-screen flex items-center justify-center">
 
-<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+Loading...
 
 </div>
 
-);
+)
 
 }
-
-
 
 
 
 if(!provider){
 
-return (
+return(
 
-<div className="min-h-screen flex items-center justify-center bg-slate-50">
+<div className="min-h-screen flex items-center justify-center">
 
-<div className="text-center">
-
-<h2 className="text-xl font-bold text-red-600">
-{error || "Provider not found"}
-</h2>
-
-<a
-href="/providers"
-className="text-blue-600 mt-4 inline-block"
->
-Back to Providers
-</a>
+Provider not found
 
 </div>
 
-</div>
-
-);
+)
 
 }
 
 
 
-return (
+const skills=convertArray(provider.skills);
 
-<main className="min-h-screen bg-slate-50 py-10 px-5">
-
-
-<div className="max-w-5xl mx-auto bg-white rounded-3xl shadow p-8">
+const languages=convertArray(provider.languages);
 
 
-{/* Profile Image */}
 
-{
-provider.profile_image &&
+return(
+
+
+<div className="min-h-screen bg-slate-50">
+
+
+<div className="max-w-4xl mx-auto px-4 py-10">
+
+
+<div className="bg-white rounded-3xl shadow p-8">
+
+
+
+{/* IMAGE */}
+
+
+{provider.profile_image &&
 
 <img
 
 src={provider.profile_image}
 
-alt={provider.name}
-
 className="
 w-full
-h-80
+h-72
 object-cover
 rounded-3xl
 "
@@ -517,7 +162,8 @@ rounded-3xl
 
 
 
-<h1 className="text-4xl font-bold mt-8 text-slate-900">
+
+<h1 className="text-4xl font-bold mt-8">
 
 {provider.name}
 
@@ -533,115 +179,102 @@ rounded-3xl
 
 
 
-<div className="mt-4 flex items-center gap-2 text-slate-600">
+<div className="mt-5 space-y-2 text-slate-600">
+
+
+{provider.district &&
+
+<p className="flex gap-2">
 
 <MapPin size={18}/>
 
-{provider.district || "Location not added"}
+{provider.district}
+
+</p>
+
+}
+
+
+
+{provider.state &&
+
+<p>
+
+State: {provider.state}
+
+</p>
+
+}
+
+
+
+
+{provider.experience &&
+
+<p className="flex gap-2">
+
+<Award size={18}/>
+
+{provider.experience} Years Experience
+
+</p>
+
+}
+
+
 
 </div>
 
 
 
 
+{/* ABOUT */}
 
-<p className="mt-6 text-slate-700">
 
-{provider.about || "No description added"}
+<div className="mt-8">
+
+
+<h2 className="text-xl font-bold">
+
+About
+
+</h2>
+
+
+<p className="mt-3 text-slate-600">
+
+{provider.about || "No description"}
 
 </p>
 
 
-
-
-
-{/* Contact Buttons */}
-
-<div className="flex gap-4 mt-8">
-
-
-<button
-
-onClick={handleCallNow}
-
-className="
-bg-blue-600
-text-white
-px-6
-py-3
-rounded-xl
-flex
-gap-2
-items-center
-"
-
->
-
-<Phone size={18}/>
-
-Call
-
-</button>
-
-
-
-
-
-<button
-
-onClick={handleWhatsApp}
-
-className="
-bg-green-600
-text-white
-px-6
-py-3
-rounded-xl
-flex
-gap-2
-items-center
-"
-
->
-
-<MessageCircle size={18}/>
-
-WhatsApp
-
-</button>
-
-
 </div>
 
 
 
 
 
+{/* SKILLS */}
 
 
-{/* Skills */}
-
-<div className="mt-10">
+<div className="mt-8">
 
 
-<h2 className="text-xl font-bold mb-4">
+<h2 className="text-xl font-bold">
 
 Skills
 
 </h2>
 
 
-
-<div className="flex flex-wrap gap-2">
+<div className="flex flex-wrap gap-2 mt-3">
 
 
 {
 
-getSkills().length > 0
+skills.length ?
 
-?
-
-getSkills().map((skill:string,index:number)=>(
+skills.map((skill:string,index:number)=>(
 
 
 <span
@@ -651,8 +284,8 @@ key={index}
 className="
 bg-blue-50
 text-blue-700
-px-4
-py-2
+px-3
+py-1
 rounded-full
 "
 
@@ -665,14 +298,9 @@ rounded-full
 
 ))
 
-
 :
 
-<p className="text-slate-500">
-
-No skills added
-
-</p>
+<p>No skills added</p>
 
 
 }
@@ -689,17 +317,15 @@ No skills added
 
 
 
+{/* LANGUAGES */}
 
-
-
-{/* Languages */}
 
 <div className="mt-8">
 
 
-<h2 className="text-xl font-bold mb-4 flex gap-2 items-center">
+<h2 className="text-xl font-bold flex gap-2">
 
-<Languages size={20}/>
+<Languages/>
 
 Languages
 
@@ -707,16 +333,12 @@ Languages
 
 
 
-<div className="flex flex-wrap gap-2">
+<div className="flex flex-wrap gap-2 mt-3">
 
 
 {
 
-getLanguages().length > 0
-
-?
-
-getLanguages().map((lang:string,index:number)=>(
+languages.map((lang:string,index:number)=>(
 
 
 <span
@@ -726,8 +348,8 @@ key={index}
 className="
 bg-green-50
 text-green-700
-px-4
-py-2
+px-3
+py-1
 rounded-full
 "
 
@@ -741,15 +363,6 @@ rounded-full
 ))
 
 
-:
-
-<p className="text-slate-500">
-
-No languages added
-
-</p>
-
-
 }
 
 
@@ -764,30 +377,174 @@ No languages added
 
 
 
+{/* ONLINE PRESENCE */}
 
 
-{/* Experience */}
-
-{
-
-provider.experience &&
 
 <div className="mt-8">
 
 
-<h2 className="text-xl font-bold flex gap-2 items-center">
+<h2 className="text-xl font-bold flex gap-2">
 
-<Award size={20}/>
+<Globe/>
 
-Experience
+Online Presence
 
 </h2>
 
 
 
-<p className="mt-2 text-slate-600">
+<div className="flex flex-wrap gap-3 mt-4">
 
-{provider.experience} Years
+
+
+{
+
+provider.website &&
+
+<a
+
+href={provider.website}
+
+target="_blank"
+
+className="
+bg-slate-100
+px-4
+py-2
+rounded-xl
+"
+
+>
+
+Website
+
+</a>
+
+}
+
+
+
+
+{
+
+provider.youtube &&
+
+<a
+
+href={provider.youtube}
+
+target="_blank"
+
+className="
+bg-red-100
+px-4
+py-2
+rounded-xl
+"
+
+>
+
+Youtube
+
+</a>
+
+}
+
+
+
+
+
+{
+
+provider.instagram &&
+
+<a
+
+href={provider.instagram}
+
+target="_blank"
+
+className="
+bg-pink-100
+px-4
+py-2
+rounded-xl
+"
+
+>
+
+Instagram
+
+</a>
+
+}
+
+
+
+
+{
+
+provider.portfolio &&
+
+<a
+
+href={provider.portfolio}
+
+target="_blank"
+
+className="
+bg-purple-100
+px-4
+py-2
+rounded-xl
+"
+
+>
+
+Portfolio
+
+</a>
+
+}
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+{/* DELIVERY */}
+
+
+
+{
+
+(provider.delivery || provider.delivery_time) &&
+
+
+<div className="mt-8">
+
+
+<h2 className="text-xl font-bold flex gap-2">
+
+<Truck/>
+
+Delivery
+
+</h2>
+
+
+
+<p className="mt-3 text-slate-600">
+
+{provider.delivery || provider.delivery_time}
 
 </p>
 
@@ -803,122 +560,65 @@ Experience
 
 
 
-
-
-{/* Reviews */}
-
-<div className="mt-10">
-
-
-<h2 className="text-2xl font-bold">
-
-Reviews ({reviewCount})
-
-</h2>
+{/* CONTACT */}
 
 
 
+<div className="mt-10 flex gap-4">
 
 
-<textarea
+<a
 
-value={reviewText}
-
-onChange={
-e=>setReviewText(e.target.value)
-}
-
-placeholder="Write your review"
+href={`tel:${provider.phone}`}
 
 className="
-w-full
-border
-rounded-xl
-p-4
-mt-4
-"
-
-rows={4}
-
-/>
-
-
-
-<button
-
-onClick={handleSubmitReview}
-
-disabled={submitting}
-
-className="
-mt-3
 bg-blue-600
 text-white
 px-6
 py-3
 rounded-xl
+flex gap-2
 "
 
 >
 
-{
-submitting
-?
-"Submitting..."
-:
-"Submit Review"
-}
+<Phone/>
 
-</button>
+Call
+
+</a>
 
 
 
 
+<a
 
+href={`https://wa.me/${provider.phone}`}
 
-
-<div className="mt-6 space-y-4">
-
-
-{
-
-reviews.map((review)=>(
-
-
-<div
-
-key={review.id}
+target="_blank"
 
 className="
-border-b
-pb-4
+bg-green-600
+text-white
+px-6
+py-3
+rounded-xl
+flex gap-2
 "
-
 
 >
 
+<MessageCircle/>
 
-<p className="text-slate-700">
+WhatsApp
 
-{review.review}
+</a>
 
-</p>
-
-
-<p className="text-xs text-slate-400">
-
-{new Date(review.created_at).toLocaleDateString()}
-
-</p>
 
 
 </div>
 
 
-))
-
-
-}
 
 
 </div>
@@ -927,12 +627,9 @@ pb-4
 </div>
 
 
-
 </div>
 
 
-</main>
-
-);
+)
 
 }
