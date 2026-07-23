@@ -5,43 +5,50 @@ import type { NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
 
 
-const token = request.cookies.get(
-"sb-access-token"
-);
+  const path = request.nextUrl.pathname;
+
+
+  const supabaseCookie = Object.keys(
+    request.cookies.getAll()
+      .reduce((acc:any,cookie)=>{
+        acc[cookie.name]=true;
+        return acc;
+      },{})
+  )
+  .find(name =>
+    name.includes("auth-token")
+  );
 
 
 
-const path = request.nextUrl.pathname;
+  if(
+    path.startsWith("/admin") &&
+    !supabaseCookie
+  ){
+
+    return NextResponse.redirect(
+      new URL("/login",request.url)
+    );
+
+  }
 
 
 
-if(
-path.startsWith("/admin") &&
-!token
-){
+  if(
+    path.startsWith("/provider-dashboard") &&
+    !supabaseCookie
+  ){
 
-return NextResponse.redirect(
-new URL("/login",request.url)
-);
+    return NextResponse.redirect(
+      new URL("/login",request.url)
+    );
 
-}
-
-
-
-if(
-path.startsWith("/provider-dashboard") &&
-!token
-){
-
-return NextResponse.redirect(
-new URL("/login",request.url)
-);
-
-}
+  }
 
 
 
-return NextResponse.next();
+  return NextResponse.next();
+
 
 }
 
@@ -49,9 +56,9 @@ return NextResponse.next();
 
 export const config = {
 
-matcher:[
-"/admin/:path*",
-"/provider-dashboard/:path*"
-]
+  matcher:[
+    "/admin/:path*",
+    "/provider-dashboard/:path*"
+  ]
 
 };
