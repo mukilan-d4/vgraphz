@@ -36,13 +36,6 @@ export default function LoginPage() {
     try{
 
 
-      console.log(
-        "LOGIN START:",
-        email
-      );
-
-
-
       const {
         data,
         error:loginError
@@ -59,11 +52,11 @@ export default function LoginPage() {
 
       if(loginError){
 
-        console.log(loginError);
-
         setError(
           loginError.message
         );
+
+        setLoading(false);
 
         return;
 
@@ -75,8 +68,10 @@ export default function LoginPage() {
       if(!data.user){
 
         setError(
-          "User not found"
+          "Login failed"
         );
+
+        setLoading(false);
 
         return;
 
@@ -84,9 +79,8 @@ export default function LoginPage() {
 
 
 
-
       console.log(
-        "LOGIN SUCCESS:",
+        "LOGIN SUCCESS",
         data.user.id
       );
 
@@ -94,15 +88,12 @@ export default function LoginPage() {
 
 
 
-      /*
-        1. CHECK ADMIN FIRST
-      */
+      // CHECK ADMIN
 
 
       const {
 
-        data:profile,
-        error:profileError
+        data:profile
 
       } = await supabase
 
@@ -120,18 +111,10 @@ export default function LoginPage() {
 
 
 
-
       console.log(
-        "PROFILE:",
+        "PROFILE",
         profile
       );
-
-
-      console.log(
-        "PROFILE ERROR:",
-        profileError
-      );
-
 
 
 
@@ -139,17 +122,12 @@ export default function LoginPage() {
       if(profile?.role === "admin"){
 
 
-        console.log(
-          "REDIRECT ADMIN"
+        window.location.replace(
+          "/admin"
         );
 
 
-        window.location.href =
-          "/admin";
-
-
         return;
-
 
       }
 
@@ -157,16 +135,14 @@ export default function LoginPage() {
 
 
 
-      /*
-        2. CHECK PROVIDER
-      */
 
+
+      // CHECK PROVIDER
 
 
       const {
 
-        data:provider,
-        error:providerError
+        data:provider
 
       } = await supabase
 
@@ -186,14 +162,8 @@ export default function LoginPage() {
 
 
       console.log(
-        "PROVIDER:",
+        "PROVIDER",
         provider
-      );
-
-
-      console.log(
-        "PROVIDER ERROR:",
-        providerError
       );
 
 
@@ -203,13 +173,9 @@ export default function LoginPage() {
       if(provider){
 
 
-        console.log(
-          "REDIRECT PROVIDER"
+        window.location.replace(
+          "/provider-dashboard"
         );
-
-
-        window.location.href =
-          "/provider-dashboard";
 
 
         return;
@@ -221,20 +187,13 @@ export default function LoginPage() {
 
 
 
-      /*
-        3. NEW USER
-      */
+
+      // NEW USER
 
 
-
-      console.log(
-        "REDIRECT JOIN PROVIDER"
+      window.location.replace(
+        "/join-provider"
       );
-
-
-
-      window.location.href =
-        "/join-provider";
 
 
 
@@ -245,7 +204,6 @@ export default function LoginPage() {
 
 
       console.log(
-        "LOGIN ERROR:",
         err
       );
 
@@ -274,12 +232,15 @@ export default function LoginPage() {
 
 
 
+
+
   return (
 
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
+    <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
 
 
       <div className="w-full max-w-md">
+
 
 
         <div className="text-center mb-8">
@@ -289,7 +250,7 @@ export default function LoginPage() {
           </h1>
 
 
-          <p className="text-slate-600 mt-1">
+          <p className="text-slate-600">
             Sign in to your account
           </p>
 
@@ -300,8 +261,8 @@ export default function LoginPage() {
 
 
 
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
 
+        <div className="bg-white rounded-3xl shadow p-8 border">
 
 
           <form
@@ -311,16 +272,13 @@ export default function LoginPage() {
 
 
 
-
             <div>
 
-
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block mb-2 font-semibold">
 
                 Email Address
 
               </label>
-
 
 
               <input
@@ -333,15 +291,13 @@ export default function LoginPage() {
                   e=>setEmail(e.target.value)
                 }
 
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                className="w-full border rounded-xl px-4 py-3"
 
                 required
 
               />
 
-
             </div>
-
 
 
 
@@ -353,25 +309,18 @@ export default function LoginPage() {
 
               <div className="flex justify-between mb-2">
 
-
-                <label className="text-sm font-semibold text-slate-700">
+                <label className="font-semibold">
 
                   Password
 
                 </label>
 
 
-
                 <Link
-
                   href="/forgot-password"
-
-                  className="text-sm text-blue-600"
-
+                  className="text-blue-600 text-sm"
                 >
-
                   Forgot password?
-
                 </Link>
 
 
@@ -386,7 +335,6 @@ export default function LoginPage() {
 
                 <input
 
-
                   type={
                     showPassword
                     ?
@@ -394,7 +342,6 @@ export default function LoginPage() {
                     :
                     "password"
                   }
-
 
 
                   value={password}
@@ -405,35 +352,25 @@ export default function LoginPage() {
                   }
 
 
-
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12"
-
+                  className="w-full border rounded-xl px-4 py-3 pr-12"
 
 
                   required
-
 
 
                 />
 
 
 
-
-
                 <button
 
-
                   type="button"
-
 
                   onClick={
                     ()=>setShowPassword(!showPassword)
                   }
 
-
-
-                  className="absolute right-4 top-3 text-slate-500"
-
+                  className="absolute right-4 top-3 text-gray-500"
 
                 >
 
@@ -453,6 +390,7 @@ export default function LoginPage() {
               </div>
 
 
+
             </div>
 
 
@@ -464,14 +402,9 @@ export default function LoginPage() {
             {
               error &&
 
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+              <div className="bg-red-50 text-red-600 p-3 rounded-xl text-sm">
 
-                <p className="text-red-600 text-sm">
-
-                  {error}
-
-                </p>
-
+                {error}
 
               </div>
 
@@ -485,18 +418,11 @@ export default function LoginPage() {
 
             <button
 
-
-              type="submit"
-
-
               disabled={loading}
 
-
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-3 font-semibold disabled:opacity-50"
-
+              className="w-full bg-blue-600 text-white rounded-xl py-3 font-semibold disabled:opacity-50"
 
             >
-
 
               {
                 loading
@@ -507,7 +433,6 @@ export default function LoginPage() {
               }
 
 
-
             </button>
 
 
@@ -515,7 +440,9 @@ export default function LoginPage() {
 
 
 
-            <p className="text-center text-sm text-slate-600">
+
+
+            <p className="text-center text-sm">
 
 
               Don't have an account?
@@ -525,7 +452,7 @@ export default function LoginPage() {
 
                 href="/register"
 
-                className="text-blue-600 font-semibold ml-1"
+                className="text-blue-600 ml-1 font-semibold"
 
               >
 
@@ -539,7 +466,6 @@ export default function LoginPage() {
 
 
 
-
           </form>
 
 
@@ -548,13 +474,12 @@ export default function LoginPage() {
 
 
 
-
       </div>
 
 
     </main>
 
-
   );
+
 
 }
