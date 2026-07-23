@@ -13,623 +13,679 @@ import {
   Award,
   Languages,
   Truck,
-  CheckCircle,
-  User
 } from "lucide-react";
 
 
-export default function ProviderDetailPage(){
+export default function ProviderDetailPage() {
 
-const params = useParams();
+  const params = useParams();
 
-const id = params.id as string;
+  const id = params.id as string;
 
 
-const [provider,setProvider] = useState<any>(null);
-const [loading,setLoading] = useState(true);
+  const [provider, setProvider] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
 
 
-useEffect(()=>{
+  useEffect(() => {
 
-loadProvider();
+    if(id){
+      loadProvider();
+    }
 
-},[]);
+  }, [id]);
 
 
 
-async function loadProvider(){
 
+  async function loadProvider(){
 
-const {data,error}=await supabase
 
-.from("videographers")
+    const { data, error } = await supabase
+      .from("videographers")
+      .select("*")
+      .eq("id", id)
+      .single();
 
-.select("*")
 
-.eq("id",id)
 
-.single();
+    console.log("VIEW PROFILE DATA:", data);
 
 
 
-console.log("PROVIDER DATA:",data);
+    if(error){
 
+      console.log(error);
 
+      setLoading(false);
 
-if(error){
+      return;
 
-console.log(error);
+    }
 
-}
 
+    setProvider(data);
 
-setProvider(data);
+    setLoading(false);
 
-setLoading(false);
 
+  }
 
-}
 
 
 
-function convertArray(value:any){
 
-if(!value) return [];
+  function convertArray(value:any){
 
-if(Array.isArray(value))
-return value;
+    if(!value) return [];
 
-return value
-.split(",")
-.map((x:string)=>x.trim())
-.filter(Boolean);
 
-}
+    if(Array.isArray(value)){
 
+      return value;
 
+    }
 
-if(loading){
 
-return(
+    try{
 
-<div className="min-h-screen flex items-center justify-center">
+      return JSON.parse(value);
 
-Loading...
+    }
 
-</div>
+    catch{
 
-)
+      return value
+      .replace("[","")
+      .replace("]","")
+      .split(",")
+      .map((x:string)=>x.replace(/"/g,"").trim())
+      .filter(Boolean);
 
-}
+    }
 
+  }
 
 
-if(!provider){
 
-return(
 
-<div className="min-h-screen flex items-center justify-center">
 
-Provider not found
+  if(loading){
 
-</div>
+    return(
 
-)
+      <div className="min-h-screen flex items-center justify-center">
 
-}
+        Loading...
 
+      </div>
 
+    )
 
-const skills=convertArray(provider.skills);
+  }
 
-const languages=convertArray(provider.languages);
 
 
 
-return(
 
+  if(!provider){
 
-<div className="min-h-screen bg-slate-50">
+    return(
 
+      <div className="min-h-screen flex items-center justify-center">
 
-<div className="max-w-4xl mx-auto px-4 py-10">
+        Provider not found
 
+      </div>
 
-<div className="bg-white rounded-3xl shadow p-8">
+    )
 
+  }
 
 
-{/* IMAGE */}
 
 
-{provider.profile_image &&
+  const skills = convertArray(provider.skills);
 
-<img
+  const languages = convertArray(provider.languages);
 
-src={provider.profile_image}
 
-className="
-w-full
-h-72
-object-cover
-rounded-3xl
-"
 
-/>
+  return (
 
-}
+    <div className="min-h-screen bg-slate-50">
 
 
+      <div className="max-w-4xl mx-auto px-4 py-10">
 
 
-<h1 className="text-4xl font-bold mt-8">
+        <div className="bg-white rounded-3xl shadow p-8">
 
-{provider.name}
 
-</h1>
 
+          {
+            provider.profile_image &&
 
+            <img
 
-<p className="text-blue-600 font-semibold mt-2">
+              src={provider.profile_image}
 
-{provider.category}
+              alt={provider.name}
 
-</p>
+              className="
+              w-full
+              h-72
+              object-cover
+              rounded-3xl
+              "
 
+            />
 
+          }
 
-<div className="mt-5 space-y-2 text-slate-600">
 
 
-{provider.district &&
 
-<p className="flex gap-2">
 
-<MapPin size={18}/>
+          <h1 className="text-4xl font-bold mt-8">
 
-{provider.district}
+            {provider.name}
 
-</p>
+          </h1>
 
-}
 
 
 
-{provider.state &&
+          <p className="text-blue-600 font-semibold mt-2">
 
-<p>
+            {provider.category}
 
-State: {provider.state}
+          </p>
 
-</p>
 
-}
 
 
+          <div className="mt-5 space-y-3 text-slate-600">
 
 
-{provider.experience &&
+            {
+              provider.district &&
 
-<p className="flex gap-2">
+              <p className="flex gap-2">
 
-<Award size={18}/>
+                <MapPin size={18}/>
 
-{provider.experience} Years Experience
+                {provider.district}
 
-</p>
+              </p>
 
-}
+            }
 
 
 
-</div>
+            {
+              provider.state &&
 
+              <p>
 
+                State: {provider.state}
 
+              </p>
 
-{/* ABOUT */}
+            }
 
 
-<div className="mt-8">
 
 
-<h2 className="text-xl font-bold">
 
-About
+            {
+              provider.experience &&
 
-</h2>
+              <p className="flex gap-2">
 
+                <Award size={18}/>
 
-<p className="mt-3 text-slate-600">
+                {provider.experience} Years Experience
 
-{provider.about || "No description"}
+              </p>
 
-</p>
+            }
 
 
-</div>
 
+          </div>
+                    {/* ABOUT */}
 
+          <div className="mt-8">
 
+            <h2 className="text-xl font-bold">
+              About
+            </h2>
 
 
-{/* SKILLS */}
+            <p className="mt-3 text-slate-600">
 
+              {provider.about || "No description"}
 
-<div className="mt-8">
+            </p>
 
+          </div>
 
-<h2 className="text-xl font-bold">
 
-Skills
 
-</h2>
 
 
-<div className="flex flex-wrap gap-2 mt-3">
+          {/* SKILLS */}
 
+          <div className="mt-8">
 
-{
 
-skills.length ?
+            <h2 className="text-xl font-bold">
 
-skills.map((skill:string,index:number)=>(
+              Skills
 
+            </h2>
 
-<span
 
-key={index}
 
-className="
-bg-blue-50
-text-blue-700
-px-3
-py-1
-rounded-full
-"
+            <div className="flex flex-wrap gap-2 mt-3">
 
->
 
-{skill}
+              {
 
-</span>
+                skills.length > 0 ?
 
 
-))
+                skills.map((skill:string,index:number)=>(
 
-:
+                  <span
 
-<p>No skills added</p>
+                    key={index}
 
+                    className="
+                    bg-blue-50
+                    text-blue-700
+                    px-3
+                    py-1
+                    rounded-full
+                    "
 
-}
+                  >
 
+                    {skill}
 
+                  </span>
 
-</div>
 
+                ))
 
-</div>
 
+                :
 
+                <p className="text-slate-500">
+                  No skills added
+                </p>
 
 
+              }
 
 
-{/* LANGUAGES */}
+            </div>
 
 
-<div className="mt-8">
+          </div>
 
 
-<h2 className="text-xl font-bold flex gap-2">
 
-<Languages/>
 
-Languages
 
-</h2>
 
 
+          {/* LANGUAGES */}
 
-<div className="flex flex-wrap gap-2 mt-3">
 
+          <div className="mt-8">
 
-{
 
-languages.map((lang:string,index:number)=>(
+            <h2 className="text-xl font-bold flex gap-2">
 
+              <Languages size={22}/>
 
-<span
+              Languages
 
-key={index}
+            </h2>
 
-className="
-bg-green-50
-text-green-700
-px-3
-py-1
-rounded-full
-"
 
->
 
-{lang}
+            <div className="flex flex-wrap gap-2 mt-3">
 
-</span>
 
+              {
 
-))
 
+              languages.length > 0 ?
 
-}
 
+              languages.map((lang:string,index:number)=>(
 
-</div>
 
+                <span
 
-</div>
+                  key={index}
 
+                  className="
+                  bg-green-50
+                  text-green-700
+                  px-3
+                  py-1
+                  rounded-full
+                  "
 
+                >
 
+                  {lang}
 
+                </span>
 
 
+              ))
 
-{/* ONLINE PRESENCE */}
 
+              :
 
+              <p className="text-slate-500">
+                No languages added
+              </p>
 
-<div className="mt-8">
 
+              }
 
-<h2 className="text-xl font-bold flex gap-2">
 
-<Globe/>
+            </div>
 
-Online Presence
 
-</h2>
+          </div>
 
 
 
-<div className="flex flex-wrap gap-3 mt-4">
 
 
 
-{
 
-provider.website &&
+          {/* ONLINE PRESENCE */}
 
-<a
 
-href={provider.website}
 
-target="_blank"
+          <div className="mt-8">
 
-className="
-bg-slate-100
-px-4
-py-2
-rounded-xl
-"
 
->
+            <h2 className="text-xl font-bold flex gap-2">
 
-Website
 
-</a>
+              <Globe size={22}/>
 
-}
+              Online Presence
 
 
+            </h2>
 
 
-{
 
-provider.youtube &&
 
-<a
+            <div className="flex flex-wrap gap-3 mt-4">
 
-href={provider.youtube}
 
-target="_blank"
 
-className="
-bg-red-100
-px-4
-py-2
-rounded-xl
-"
 
->
 
-Youtube
+              {
+                provider.website &&
 
-</a>
+                <a
 
-}
+                  href={provider.website}
 
+                  target="_blank"
 
+                  className="
+                  bg-slate-100
+                  px-4
+                  py-2
+                  rounded-xl
+                  "
 
+                >
 
+                  Website
 
-{
+                </a>
 
-provider.instagram &&
+              }
 
-<a
 
-href={provider.instagram}
 
-target="_blank"
 
-className="
-bg-pink-100
-px-4
-py-2
-rounded-xl
-"
 
->
 
-Instagram
 
-</a>
+              {
+                provider.youtube &&
 
-}
+                <a
 
+                  href={provider.youtube}
 
+                  target="_blank"
 
+                  className="
+                  bg-red-100
+                  px-4
+                  py-2
+                  rounded-xl
+                  "
 
-{
+                >
 
-provider.portfolio &&
+                  YouTube
 
-<a
+                </a>
 
-href={provider.portfolio}
+              }
 
-target="_blank"
 
-className="
-bg-purple-100
-px-4
-py-2
-rounded-xl
-"
 
->
 
-Portfolio
 
-</a>
 
-}
 
+              {
+                provider.instagram &&
 
+                <a
 
-</div>
+                  href={provider.instagram}
 
+                  target="_blank"
 
-</div>
+                  className="
+                  bg-pink-100
+                  px-4
+                  py-2
+                  rounded-xl
+                  "
 
+                >
 
+                  Instagram
 
+                </a>
 
+              }
 
 
-{/* DELIVERY */}
 
 
 
-{
 
-(provider.delivery || provider.delivery_time) &&
 
 
-<div className="mt-8">
+              {
+                provider.portfolio &&
 
+                <a
 
-<h2 className="text-xl font-bold flex gap-2">
+                  href={provider.portfolio}
 
-<Truck/>
+                  target="_blank"
 
-Delivery
+                  className="
+                  bg-purple-100
+                  px-4
+                  py-2
+                  rounded-xl
+                  "
 
-</h2>
+                >
 
+                  Portfolio
 
+                </a>
 
-<p className="mt-3 text-slate-600">
+              }
 
-{provider.delivery || provider.delivery_time}
 
-</p>
 
+            </div>
 
-</div>
 
+          </div>
 
-}
 
 
 
 
 
 
+          {/* DELIVERY */}
 
-{/* CONTACT */}
 
 
+          {
 
-<div className="mt-10 flex gap-4">
+          (provider.delivery || provider.delivery_time) &&
 
 
-<a
+          <div className="mt-8">
 
-href={`tel:${provider.phone}`}
 
-className="
-bg-blue-600
-text-white
-px-6
-py-3
-rounded-xl
-flex gap-2
-"
+            <h2 className="text-xl font-bold flex gap-2">
 
->
 
-<Phone/>
+              <Truck size={22}/>
 
-Call
+              Delivery
 
-</a>
 
+            </h2>
 
 
 
-<a
 
-href={`https://wa.me/${provider.phone}`}
+            <p className="mt-3 text-slate-600">
 
-target="_blank"
 
-className="
-bg-green-600
-text-white
-px-6
-py-3
-rounded-xl
-flex gap-2
-"
+              {provider.delivery || provider.delivery_time}
 
->
 
-<MessageCircle/>
+            </p>
 
-WhatsApp
 
-</a>
+          </div>
 
 
+          }
 
-</div>
 
 
 
 
-</div>
 
 
-</div>
+          {/* CONTACT */}
 
+          <div className="mt-10 flex gap-4">
 
-</div>
 
 
-)
+            <a
+
+              href={`tel:${provider.phone}`}
+
+              className="
+              bg-blue-600
+              text-white
+              px-6
+              py-3
+              rounded-xl
+              flex
+              gap-2
+              items-center
+              "
+
+            >
+
+              <Phone size={20}/>
+
+              Call
+
+            </a>
+
+
+
+
+
+            <a
+
+              href={`https://wa.me/${provider.phone}`}
+
+              target="_blank"
+
+              className="
+              bg-green-600
+              text-white
+              px-6
+              py-3
+              rounded-xl
+              flex
+              gap-2
+              items-center
+              "
+
+            >
+
+              <MessageCircle size={20}/>
+
+              WhatsApp
+
+            </a>
+
+
+
+          </div>
+
+
+
+        </div>
+
+
+      </div>
+
+
+    </div>
+
+
+  );
+
 
 }
