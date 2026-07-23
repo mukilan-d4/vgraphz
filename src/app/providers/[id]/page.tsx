@@ -8,558 +8,486 @@ import {
   MapPin,
   Phone,
   MessageCircle,
+  Send,
+  User,
+  Mail,
+  Clock,
+  ChevronUp,
+  ChevronDown,
+  Edit,
+  Trash2,
+  X,
+  Check,
   Globe,
   FolderOpen,
   Award,
   Languages,
   Truck,
+  CheckCircle
 } from "lucide-react";
 
 
-export default function ProviderDetailPage() {
 
-  const params = useParams();
+interface Review {
 
-  const id = params.id as string;
+  id:string;
+  provider_id:number;
+  rater_id:string;
+  review:string;
+  created_at:string;
 
+}
 
-  const [provider, setProvider] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
 
+export default function ProviderDetailPage(){
 
-  useEffect(() => {
 
-    if(id){
-      loadProvider();
-    }
+const params = useParams();
 
-  }, [id]);
+const providerId = params.id as string;
 
 
 
+const [provider,setProvider]=useState<any>(null);
 
-  async function loadProvider(){
+const [reviews,setReviews]=useState<Review[]>([]);
 
+const [reviewCount,setReviewCount]=useState(0);
 
-    const { data, error } = await supabase
-      .from("videographers")
-      .select("*")
-      .eq("id", id)
-      .single();
 
+const [loading,setLoading]=useState(true);
 
 
-    console.log("VIEW PROFILE DATA:", data);
+const [currentUser,setCurrentUser]=useState<any>(null);
 
 
+const [isOwnProfile,setIsOwnProfile]=useState(false);
 
-    if(error){
 
-      console.log(error);
+const [reviewText,setReviewText]=useState("");
 
-      setLoading(false);
 
-      return;
+const [submitting,setSubmitting]=useState(false);
 
-    }
 
+const [error,setError]=useState("");
 
-    setProvider(data);
 
-    setLoading(false);
+const [success,setSuccess]=useState("");
 
 
-  }
 
+const [editingReviewId,setEditingReviewId]=useState<string|null>(null);
 
+const [editingReviewText,setEditingReviewText]=useState("");
 
 
 
-  function convertArray(value:any){
 
-    if(!value) return [];
+const [showEnquiryForm,setShowEnquiryForm]=useState(false);
 
 
-    if(Array.isArray(value)){
 
-      return value;
+const [enquiryName,setEnquiryName]=useState("");
 
-    }
+const [enquiryPhone,setEnquiryPhone]=useState("");
 
+const [enquiryEvent,setEnquiryEvent]=useState("");
 
-    try{
+const [enquiryRequirements,setEnquiryRequirements]=useState("");
 
-      return JSON.parse(value);
+const [enquirySubmitting,setEnquirySubmitting]=useState(false);
 
-    }
+const [enquirySuccess,setEnquirySuccess]=useState("");
 
-    catch{
+const [enquiryError,setEnquiryError]=useState("");
 
-      return value
-      .replace("[","")
-      .replace("]","")
-      .split(",")
-      .map((x:string)=>x.replace(/"/g,"").trim())
-      .filter(Boolean);
 
-    }
 
-  }
 
 
 
 
+useEffect(()=>{
 
-  if(loading){
 
-    return(
+loadData();
 
-      <div className="min-h-screen flex items-center justify-center">
 
-        Loading...
+},[providerId]);
 
-      </div>
 
-    )
 
-  }
 
 
 
 
+function convertArray(value:any){
 
-  if(!provider){
 
-    return(
+if(!value) return [];
 
-      <div className="min-h-screen flex items-center justify-center">
 
-        Provider not found
+if(Array.isArray(value))
+return value;
 
-      </div>
 
-    )
 
-  }
+try{
 
+const parsed=JSON.parse(value);
 
+if(Array.isArray(parsed))
+return parsed;
 
 
-  const skills = convertArray(provider.skills);
+}catch{}
 
-  const languages = convertArray(provider.languages);
 
 
+return String(value)
+.split(",")
+.map((x)=>x.trim())
+.filter(Boolean);
 
-  return (
 
-    <div className="min-h-screen bg-slate-50">
 
+}
 
-      <div className="max-w-4xl mx-auto px-4 py-10">
 
 
-        <div className="bg-white rounded-3xl shadow p-8">
 
 
 
-          {
-            provider.profile_image &&
 
-            <img
 
-              src={provider.profile_image}
+async function loadData(){
 
-              alt={provider.name}
 
-              className="
-              w-full
-              h-72
-              object-cover
-              rounded-3xl
-              "
+try{
 
-            />
 
-          }
+setLoading(true);
 
 
 
+const {data:{user}} =
+await supabase.auth.getUser();
 
 
-          <h1 className="text-4xl font-bold mt-8">
 
-            {provider.name}
+setCurrentUser(user);
 
-          </h1>
 
 
 
 
-          <p className="text-blue-600 font-semibold mt-2">
 
-            {provider.category}
+const {data:providerData,error:providerError}=
 
-          </p>
+await supabase
 
+.from("videographers")
 
+.select("*")
 
+.eq("id",providerId)
 
-          <div className="mt-5 space-y-3 text-slate-600">
+.single();
 
 
-            {
-              provider.district &&
 
-              <p className="flex gap-2">
 
-                <MapPin size={18}/>
 
-                {provider.district}
+console.log("PROVIDER DATA:",providerData);
 
-              </p>
 
-            }
 
 
 
-            {
-              provider.state &&
+if(providerError){
 
-              <p>
+console.log(providerError);
 
-                State: {provider.state}
+setProvider(null);
 
-              </p>
+return;
 
-            }
+}
 
 
 
 
+setProvider(providerData);
 
-            {
-              provider.experience &&
 
-              <p className="flex gap-2">
 
-                <Award size={18}/>
 
-                {provider.experience} Years Experience
 
-              </p>
+if(user && providerData.user_id===user.id){
 
-            }
+setIsOwnProfile(true);
 
+}
 
 
-          </div>
-                    {/* ABOUT */}
 
-          <div className="mt-8">
 
-            <h2 className="text-xl font-bold">
-              About
-            </h2>
 
 
-            <p className="mt-3 text-slate-600">
+const {data:reviewsData}=
 
-              {provider.about || "No description"}
+await supabase
 
-            </p>
+.from("reviews")
 
-          </div>
+.select("*")
 
+.eq("provider_id",Number(providerId))
 
+.order("created_at",{ascending:false});
 
 
 
-          {/* SKILLS */}
 
-          <div className="mt-8">
 
+setReviews(reviewsData || []);
 
-            <h2 className="text-xl font-bold">
+setReviewCount(reviewsData?.length || 0);
 
-              Skills
 
-            </h2>
 
 
 
-            <div className="flex flex-wrap gap-2 mt-3">
+}
 
+catch(err){
 
-              {
+console.log(err);
 
-                skills.length > 0 ?
 
+}
 
-                skills.map((skill:string,index:number)=>(
+finally{
 
-                  <span
 
-                    key={index}
+setLoading(false);
 
-                    className="
-                    bg-blue-50
-                    text-blue-700
-                    px-3
-                    py-1
-                    rounded-full
-                    "
 
-                  >
+}
 
-                    {skill}
 
-                  </span>
 
+}
 
-                ))
 
 
-                :
 
-                <p className="text-slate-500">
-                  No skills added
-                </p>
 
 
-              }
+const skills = convertArray(provider?.skills);
 
+const languages = convertArray(provider?.languages);
 
-            </div>
 
 
-          </div>
 
 
+async function handleSubmitReview(){
 
 
+if(!currentUser){
 
+setError("Please login to leave a review");
 
+return;
 
-          {/* LANGUAGES */}
+}
 
 
-          <div className="mt-8">
 
+if(isOwnProfile){
 
-            <h2 className="text-xl font-bold flex gap-2">
+setError("You cannot review your own profile");
 
-              <Languages size={22}/>
+return;
 
-              Languages
+}
 
-            </h2>
 
 
+if(!reviewText.trim()){
 
-            <div className="flex flex-wrap gap-2 mt-3">
+setError("Please write a review");
 
+return;
 
-              {
+}
 
 
-              languages.length > 0 ?
 
+try{
 
-              languages.map((lang:string,index:number)=>(
 
+setSubmitting(true);
 
-                <span
 
-                  key={index}
+const {data,error}=await supabase
 
-                  className="
-                  bg-green-50
-                  text-green-700
-                  px-3
-                  py-1
-                  rounded-full
-                  "
+.from("reviews")
 
-                >
+.insert({
 
-                  {lang}
+provider_id:Number(providerId),
 
-                </span>
+rater_id:currentUser.id,
 
+review:reviewText.trim()
 
-              ))
+})
 
+.select()
 
-              :
+.single();
 
-              <p className="text-slate-500">
-                No languages added
-              </p>
 
 
-              }
 
 
-            </div>
+if(error) throw error;
 
 
-          </div>
 
 
+setReviews([data,...reviews]);
 
+setReviewCount(reviewCount+1);
 
+setReviewText("");
 
+setSuccess("Review submitted successfully");
 
 
-          {/* ONLINE PRESENCE */}
 
+setTimeout(()=>setSuccess(""),3000);
 
 
-          <div className="mt-8">
 
+}
 
-            <h2 className="text-xl font-bold flex gap-2">
+catch(err:any){
 
+setError(err.message);
 
-              <Globe size={22}/>
+}
 
-              Online Presence
+finally{
 
 
-            </h2>
+setSubmitting(false);
 
 
+}
 
 
-            <div className="flex flex-wrap gap-3 mt-4">
 
+}
 
 
 
 
-              {
-                provider.website &&
 
-                <a
 
-                  href={provider.website}
 
-                  target="_blank"
 
-                  className="
-                  bg-slate-100
-                  px-4
-                  py-2
-                  rounded-xl
-                  "
 
-                >
+function startEditing(review:Review){
 
-                  Website
 
-                </a>
+setEditingReviewId(review.id);
 
-              }
+setEditingReviewText(review.review);
 
 
+}
 
 
 
 
 
-              {
-                provider.youtube &&
 
-                <a
 
-                  href={provider.youtube}
+async function handleEditReview(id:string){
 
-                  target="_blank"
 
-                  className="
-                  bg-red-100
-                  px-4
-                  py-2
-                  rounded-xl
-                  "
 
-                >
+if(!editingReviewText.trim())
+return;
 
-                  YouTube
 
-                </a>
 
-              }
+const {error}=await supabase
 
+.from("reviews")
 
+.update({
 
+review:editingReviewText.trim()
 
+})
 
+.eq("id",id);
 
 
-              {
-                provider.instagram &&
 
-                <a
 
-                  href={provider.instagram}
 
-                  target="_blank"
+if(error){
 
-                  className="
-                  bg-pink-100
-                  px-4
-                  py-2
-                  rounded-xl
-                  "
+setError(error.message);
 
-                >
+return;
 
-                  Instagram
+}
 
-                </a>
 
-              }
 
 
+setReviews(
 
+reviews.map((r)=>
 
+r.id===id
 
+?
 
+{
 
+...r,
 
-              {
-                provider.portfolio &&
+review:editingReviewText.trim()
 
-                <a
+}
 
-                  href={provider.portfolio}
+:
 
-                  target="_blank"
+r
 
-                  className="
-                  bg-purple-100
-                  px-4
-                  py-2
-                  rounded-xl
-                  "
+)
 
-                >
+);
 
-                  Portfolio
 
-                </a>
 
-              }
+setEditingReviewId(null);
 
+setEditingReviewText("");
 
 
-            </div>
 
+}
 
-          </div>
 
 
 
@@ -567,125 +495,1312 @@ export default function ProviderDetailPage() {
 
 
 
-          {/* DELIVERY */}
 
+async function handleDeleteReview(id:string){
 
 
-          {
+const ok=confirm(
+"Delete this review?"
+);
 
-          (provider.delivery || provider.delivery_time) &&
 
+if(!ok) return;
 
-          <div className="mt-8">
 
 
-            <h2 className="text-xl font-bold flex gap-2">
 
 
-              <Truck size={22}/>
+const {error}=await supabase
 
-              Delivery
+.from("reviews")
 
+.delete()
 
-            </h2>
+.eq("id",id);
 
 
 
 
-            <p className="mt-3 text-slate-600">
 
+if(error){
 
-              {provider.delivery || provider.delivery_time}
+setError(error.message);
 
+return;
 
-            </p>
+}
 
 
-          </div>
 
 
-          }
 
+setReviews(
 
+reviews.filter((r)=>r.id!==id)
 
+);
 
 
 
+setReviewCount(reviewCount-1);
 
-          {/* CONTACT */}
 
-          <div className="mt-10 flex gap-4">
 
+}
 
 
-            <a
 
-              href={`tel:${provider.phone}`}
 
-              className="
-              bg-blue-600
-              text-white
-              px-6
-              py-3
-              rounded-xl
-              flex
-              gap-2
-              items-center
-              "
 
-            >
 
-              <Phone size={20}/>
 
-              Call
 
-            </a>
 
+async function handleEnquirySubmit(
+e:React.FormEvent
+){
 
 
+e.preventDefault();
 
 
-            <a
 
-              href={`https://wa.me/${provider.phone}`}
+if(
 
-              target="_blank"
+!enquiryName ||
 
-              className="
-              bg-green-600
-              text-white
-              px-6
-              py-3
-              rounded-xl
-              flex
-              gap-2
-              items-center
-              "
+!enquiryPhone ||
 
-            >
+!enquiryRequirements
 
-              <MessageCircle size={20}/>
+){
 
-              WhatsApp
+setEnquiryError(
+"Please fill required fields"
+);
 
-            </a>
+return;
 
+}
 
 
-          </div>
 
+try{
 
 
-        </div>
+setEnquirySubmitting(true);
 
 
-      </div>
 
+const {error}=await supabase
 
-    </div>
+.from("enquiries")
 
+.insert({
 
-  );
+provider_id:Number(providerId),
 
+rater_id:currentUser?.id || null,
+
+name:enquiryName,
+
+phone:enquiryPhone,
+
+event_type:enquiryEvent,
+
+requirements:enquiryRequirements
+
+});
+
+
+
+
+
+if(error) throw error;
+
+
+
+
+
+setEnquirySuccess(
+"Enquiry sent successfully"
+);
+
+
+
+setEnquiryName("");
+
+setEnquiryPhone("");
+
+setEnquiryEvent("");
+
+setEnquiryRequirements("");
+
+
+
+}
+
+catch(err:any){
+
+setEnquiryError(err.message);
+
+}
+
+finally{
+
+
+setEnquirySubmitting(false);
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+
+function handleWhatsApp(){
+
+
+if(provider?.phone){
+
+
+window.open(
+
+`https://wa.me/${provider.phone}`,
+
+"_blank"
+
+);
+
+
+}
+
+
+}
+
+
+
+
+
+
+function handleCall(){
+
+
+if(provider?.phone){
+
+
+window.location.href=
+
+`tel:${provider.phone}`;
+
+
+}
+
+
+
+}
+
+
+
+
+
+
+if(loading){
+
+
+return(
+
+<div className="min-h-screen flex items-center justify-center">
+
+Loading...
+
+</div>
+
+)
+
+
+}
+
+
+
+
+
+
+
+if(!provider){
+
+
+return(
+
+<div className="min-h-screen flex items-center justify-center">
+
+Provider not found
+
+</div>
+
+)
+
+
+}
+return (
+
+<div className="min-h-screen bg-slate-50">
+
+
+{/* HEADER */}
+
+<div className="bg-white border-b">
+
+<div className="max-w-4xl mx-auto px-4 py-6">
+
+
+<div className="flex flex-col md:flex-row gap-5 items-center">
+
+
+
+<div className="w-24 h-24 rounded-full overflow-hidden bg-slate-200">
+
+{
+
+provider.profile_image ?
+
+<img
+
+src={provider.profile_image}
+
+className="w-full h-full object-cover"
+
+/>
+
+:
+
+<div className="w-full h-full flex items-center justify-center text-3xl">
+
+{provider.name?.charAt(0)}
+
+</div>
+
+}
+
+
+</div>
+
+
+
+
+
+<div className="flex-1">
+
+
+<div className="flex items-center gap-2">
+
+
+<h1 className="text-3xl font-bold">
+
+{provider.name}
+
+</h1>
+
+
+{
+
+provider.verified &&
+
+<CheckCircle size={20} className="text-green-600"/>
+
+}
+
+
+</div>
+
+
+
+<p className="text-blue-600 font-semibold">
+
+{provider.category}
+
+</p>
+
+
+
+<div className="flex gap-4 mt-2 text-sm text-slate-600">
+
+
+<span className="flex gap-1">
+
+<MapPin size={16}/>
+
+{provider.district}
+
+</span>
+
+
+
+<span>
+
+{reviewCount} Reviews
+
+</span>
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+<div className="flex gap-2">
+
+
+<button
+
+onClick={handleCall}
+
+className="bg-blue-600 text-white px-4 py-2 rounded-xl flex gap-2"
+
+>
+
+<Phone size={16}/>
+
+Call
+
+</button>
+
+
+
+<button
+
+onClick={handleWhatsApp}
+
+className="bg-green-600 text-white px-4 py-2 rounded-xl flex gap-2"
+
+>
+
+<MessageCircle size={16}/>
+
+WhatsApp
+
+</button>
+
+
+
+<button
+
+onClick={()=>setShowEnquiryForm(!showEnquiryForm)}
+
+className="bg-purple-600 text-white px-4 py-2 rounded-xl flex gap-2"
+
+>
+
+<Send size={16}/>
+
+Enquiry
+
+</button>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+{
+
+showEnquiryForm &&
+
+<form
+
+onSubmit={handleEnquirySubmit}
+
+className="mt-5 bg-slate-50 p-5 rounded-2xl space-y-3"
+
+>
+
+
+
+<input
+
+placeholder="Your Name"
+
+value={enquiryName}
+
+onChange={(e)=>setEnquiryName(e.target.value)}
+
+className="w-full border rounded-xl p-3"
+
+/>
+
+
+
+<input
+
+placeholder="Phone"
+
+value={enquiryPhone}
+
+onChange={(e)=>setEnquiryPhone(e.target.value)}
+
+className="w-full border rounded-xl p-3"
+
+/>
+
+
+
+<input
+
+placeholder="Event Type"
+
+value={enquiryEvent}
+
+onChange={(e)=>setEnquiryEvent(e.target.value)}
+
+className="w-full border rounded-xl p-3"
+
+/>
+
+
+
+<textarea
+
+placeholder="Requirements"
+
+value={enquiryRequirements}
+
+onChange={(e)=>setEnquiryRequirements(e.target.value)}
+
+className="w-full border rounded-xl p-3"
+
+/>
+
+
+
+<button
+
+disabled={enquirySubmitting}
+
+className="bg-blue-600 text-white px-5 py-3 rounded-xl"
+
+>
+
+{enquirySubmitting ? "Sending..." : "Send Enquiry"}
+
+</button>
+
+
+
+</form>
+
+
+}
+
+
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+
+{/* MAIN */}
+
+
+<div className="max-w-4xl mx-auto px-4 py-8 grid md:grid-cols-2 gap-6">
+
+
+
+
+
+
+
+{/* ABOUT */}
+
+
+<div className="bg-white rounded-3xl shadow-sm border p-6">
+
+
+<h2 className="text-xl font-bold mb-3">
+
+About
+
+</h2>
+
+
+<p className="text-slate-600">
+
+{provider.about || "No description"}
+
+</p>
+
+
+</div>
+
+
+
+
+
+
+
+
+{/* LOCATION */}
+
+
+<div className="bg-white rounded-3xl shadow-sm border p-6">
+
+
+<h2 className="text-xl font-bold flex gap-2">
+
+<MapPin/>
+
+Location
+
+</h2>
+
+
+
+<p className="mt-3 text-slate-600">
+
+{provider.location || provider.district}
+
+</p>
+
+
+
+{
+
+provider.state &&
+
+<p className="mt-2">
+
+State: {provider.state}
+
+</p>
+
+}
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{/* SKILLS */}
+
+
+<div className="bg-white rounded-3xl shadow-sm border p-6">
+
+
+<h2 className="text-xl font-bold">
+
+Skills & Expertise
+
+</h2>
+
+
+
+<div className="flex flex-wrap gap-2 mt-4">
+
+
+{
+
+skills.length ?
+
+skills.map((skill:string,i:number)=>(
+
+
+<span
+
+key={i}
+
+className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full"
+
+>
+
+{skill}
+
+</span>
+
+
+))
+
+:
+
+<p>No skills added</p>
+
+
+}
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{/* EXPERIENCE */}
+
+
+<div className="bg-white rounded-3xl shadow-sm border p-6">
+
+
+<h2 className="text-xl font-bold flex gap-2">
+
+<Award/>
+
+Experience
+
+</h2>
+
+
+<p className="mt-3 text-slate-600">
+
+{provider.experience || "Not added"} Years
+
+</p>
+
+
+
+</div>
+
+
+
+
+
+
+
+{/* LANGUAGES */}
+
+
+<div className="bg-white rounded-3xl shadow-sm border p-6">
+
+
+<h2 className="text-xl font-bold flex gap-2">
+
+<Languages/>
+
+Languages
+
+</h2>
+
+
+
+<div className="flex flex-wrap gap-2 mt-4">
+
+
+{
+
+languages.length ?
+
+languages.map((lang:string,i:number)=>(
+
+
+<span
+
+key={i}
+
+className="bg-green-50 text-green-700 px-3 py-1 rounded-full"
+
+>
+
+{lang}
+
+</span>
+
+
+))
+
+:
+
+<p>No languages added</p>
+
+}
+
+
+
+</div>
+
+
+</div>
+
+{/* ONLINE PRESENCE */}
+
+<div className="bg-white rounded-3xl shadow-sm border p-6">
+
+
+<h2 className="text-xl font-bold flex gap-2">
+
+<Globe/>
+
+Online Presence
+
+</h2>
+
+
+
+<div className="flex flex-wrap gap-3 mt-4">
+
+
+{
+
+provider.website &&
+
+<a
+
+href={provider.website}
+
+target="_blank"
+
+className="bg-slate-100 px-4 py-2 rounded-xl"
+
+>
+
+Website
+
+</a>
+
+}
+
+
+
+{
+
+provider.youtube &&
+
+<a
+
+href={provider.youtube}
+
+target="_blank"
+
+className="bg-red-100 px-4 py-2 rounded-xl"
+
+>
+
+YouTube
+
+</a>
+
+}
+
+
+
+{
+
+provider.instagram &&
+
+<a
+
+href={provider.instagram}
+
+target="_blank"
+
+className="bg-pink-100 px-4 py-2 rounded-xl"
+
+>
+
+Instagram
+
+</a>
+
+}
+
+
+
+{
+
+provider.portfolio &&
+
+<a
+
+href={provider.portfolio}
+
+target="_blank"
+
+className="bg-purple-100 px-4 py-2 rounded-xl"
+
+>
+
+Portfolio
+
+</a>
+
+}
+
+
+</div>
+
+
+</div>
+
+
+
+
+
+
+{/* DELIVERY */}
+
+{
+
+(provider.delivery || provider.delivery_time) &&
+
+
+<div className="bg-white rounded-3xl shadow-sm border p-6">
+
+
+<h2 className="text-xl font-bold flex gap-2">
+
+<Truck/>
+
+Delivery
+
+</h2>
+
+
+
+<p className="mt-3 text-slate-600">
+
+{provider.delivery || provider.delivery_time}
+
+</p>
+
+
+</div>
+
+
+}
+
+
+
+</div>
+
+
+
+
+
+
+
+
+{/* REVIEWS */}
+
+
+
+<div className="max-w-4xl mx-auto px-4 pb-10">
+
+
+<div className="bg-white rounded-3xl shadow-sm border p-6">
+
+
+<h2 className="text-xl font-bold">
+
+Reviews ({reviewCount})
+
+</h2>
+
+
+
+
+
+{
+
+currentUser && !isOwnProfile &&
+
+<div className="mt-5">
+
+
+<textarea
+
+value={reviewText}
+
+onChange={(e)=>setReviewText(e.target.value)}
+
+placeholder="Write your review"
+
+className="w-full border rounded-xl p-3"
+
+rows={4}
+
+/>
+
+
+
+<button
+
+onClick={handleSubmitReview}
+
+disabled={submitting}
+
+className="mt-3 bg-blue-600 text-white px-5 py-3 rounded-xl"
+
+>
+
+Submit Review
+
+</button>
+
+
+</div>
+
+
+}
+
+
+
+
+{
+
+currentUser && isOwnProfile &&
+
+<div className="mt-5 bg-yellow-50 p-4 rounded-xl">
+
+You cannot review your own profile
+
+</div>
+
+}
+
+
+
+
+
+{
+
+!currentUser &&
+
+<div className="mt-5 bg-slate-50 p-4 rounded-xl">
+
+Please login to leave a review
+
+</div>
+
+}
+
+
+
+
+
+
+
+<div className="mt-6 space-y-4">
+
+
+{
+
+reviews.length===0 ?
+
+<p className="text-slate-500">
+
+No reviews yet
+
+</p>
+
+
+:
+
+reviews.map((review)=>(
+
+
+<div
+
+key={review.id}
+
+className="border-b pb-4"
+
+>
+
+
+<div className="flex gap-2 items-center">
+
+
+<User size={18}/>
+
+
+<span className="font-semibold">
+
+{
+
+review.rater_id===currentUser?.id
+
+?
+
+"You"
+
+:
+
+"User"
+
+}
+
+</span>
+
+
+</div>
+
+
+
+
+
+{
+
+editingReviewId===review.id ?
+
+(
+
+<div className="mt-3">
+
+
+<textarea
+
+value={editingReviewText}
+
+onChange={(e)=>setEditingReviewText(e.target.value)}
+
+className="w-full border rounded-xl p-2"
+
+/>
+
+
+
+<div className="flex gap-2 mt-2">
+
+
+<button
+
+onClick={()=>handleEditReview(review.id)}
+
+className="bg-green-600 text-white px-3 py-2 rounded-xl flex gap-1"
+
+>
+
+<Check size={15}/>
+
+Save
+
+</button>
+
+
+
+<button
+
+onClick={()=>setEditingReviewId(null)}
+
+className="border px-3 py-2 rounded-xl flex gap-1"
+
+>
+
+<X size={15}/>
+
+Cancel
+
+</button>
+
+
+</div>
+
+
+
+</div>
+
+)
+
+
+:
+
+(
+
+<>
+
+
+<p className="mt-2">
+
+{review.review}
+
+</p>
+
+
+
+
+{
+
+review.rater_id===currentUser?.id &&
+
+<div className="flex gap-4 mt-3">
+
+
+<button
+
+onClick={()=>{
+
+setEditingReviewId(review.id);
+
+setEditingReviewText(review.review);
+
+}}
+
+className="text-blue-600 flex gap-1"
+
+>
+
+<Edit size={14}/>
+
+Edit
+
+</button>
+
+
+
+
+<button
+
+onClick={()=>handleDeleteReview(review.id)}
+
+className="text-red-600 flex gap-1"
+
+>
+
+<Trash2 size={14}/>
+
+Delete
+
+</button>
+
+
+</div>
+
+
+}
+
+
+
+</>
+
+)
+
+
+}
+
+
+
+</div>
+
+
+))
+
+
+}
+
+
+</div>
+
+
+
+</div>
+
+
+
+</div>
+
+
+
+
+
+
+
+{/* FOOTER */}
+
+
+<footer className="bg-white border-t py-10 mt-10">
+
+
+<div className="max-w-4xl mx-auto px-4">
+
+
+<h3 className="text-xl font-bold">
+
+VgraphZ
+
+</h3>
+
+
+<p className="text-slate-600 mt-2">
+
+Discover trusted creative professionals.
+
+</p>
+
+
+
+<div className="mt-4 text-sm text-slate-500 space-y-2">
+
+
+<p className="flex gap-2">
+
+<Mail size={16}/>
+
+support@vgraphz.com
+
+</p>
+
+
+
+<p className="flex gap-2">
+
+<Clock size={16}/>
+
+Mon - Sat | 9 AM - 7 PM
+
+</p>
+
+
+</div>
+
+
+</div>
+
+
+</footer>
+
+
+
+
+</div>
+
+
+);
 
 }
