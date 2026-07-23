@@ -3,22 +3,19 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-
 import {
   MapPin,
   Phone,
   MessageCircle,
   Send,
   User,
-  Mail,
-  Clock,
   CheckCircle,
-  Edit,
+  Mail,
   Trash2,
-  X,
+  Edit,
   Check,
+  X,
   Globe,
-  FolderOpen,
   Award,
   Languages,
   Truck
@@ -26,60 +23,57 @@ import {
 
 
 interface Review {
-
   id:string;
   provider_id:number;
   rater_id:string;
   review:string;
   created_at:string;
-
 }
 
 
 
 interface Provider {
 
-  id:number;
+id:number;
 
-  name:string;
+name:string;
 
-  email:string;
+email:string;
 
-  category:string;
+category:string;
 
-  district:string;
+district:string;
 
-  about:string;
+about:string;
 
-  profile_image:string;
+profile_image:string;
 
-  user_id:string;
+user_id:string;
 
-  phone?:string;
+phone?:string;
 
-  whatsapp?:string;
+verified?:boolean;
 
-  verified?:boolean;
+skills:any;
 
-  skills?:string[];
+languages:any;
 
-  website?:string;
+website?:string;
 
-  youtube?:string;
+youtube?:string;
 
-  portfolio?:string;
+portfolio?:string;
 
-  instagram?:string;
+instagram?:string;
 
-  experience?:string;
+experience?:string;
 
-  location?:string;
+location?:string;
 
-  languages?:string[];
-
-  delivery?:string;
+delivery?:string;
 
 }
+
 
 
 
@@ -88,122 +82,31 @@ export default function ProviderDetailPage(){
 
 const params = useParams();
 
-
 const providerId = params.id as string;
 
 
 
-const [provider,setProvider] =
-useState<Provider|null>(null);
+const [provider,setProvider] = useState<Provider|null>(null);
 
+const [reviews,setReviews] = useState<Review[]>([]);
 
+const [reviewCount,setReviewCount] = useState(0);
 
-const [reviews,setReviews] =
-useState<Review[]>([]);
+const [loading,setLoading] = useState(true);
 
+const [currentUser,setCurrentUser] = useState<any>(null);
 
+const [error,setError] = useState("");
 
-const [reviewCount,setReviewCount] =
-useState(0);
+const [reviewText,setReviewText] = useState("");
 
-
-
-const [loading,setLoading] =
-useState(true);
-
-
-
-const [currentUser,setCurrentUser] =
-useState<any>(null);
-
-
-
-const [error,setError] =
-useState("");
-
-
-
-const [success,setSuccess] =
-useState("");
-
-
-
-const [reviewText,setReviewText] =
-useState("");
-
-
-
-const [submitting,setSubmitting] =
-useState(false);
-
-
-
-const [editingReviewId,setEditingReviewId] =
-useState<string|null>(null);
-
-
-
-const [editingReviewText,setEditingReviewText] =
-useState("");
-
-
-
-const [showEnquiryForm,setShowEnquiryForm] =
-useState(false);
-
-
-
-const [enquiryName,setEnquiryName] =
-useState("");
-
-
-
-const [enquiryPhone,setEnquiryPhone] =
-useState("");
-
-
-
-const [enquiryEvent,setEnquiryEvent] =
-useState("");
-
-
-
-const [enquiryRequirements,setEnquiryRequirements] =
-useState("");
-
-
-
-const [enquirySubmitting,setEnquirySubmitting] =
-useState(false);
-
-
-
-const [enquirySuccess,setEnquirySuccess] =
-useState("");
-
-
-
-const [enquiryError,setEnquiryError] =
-useState("");
-
-
-
-const [isOwnProfile,setIsOwnProfile] =
-useState(false);
-
-
+const [submitting,setSubmitting] = useState(false);
 
 
 
 useEffect(()=>{
 
-
-if(providerId){
-
 fetchData();
-
-}
-
 
 },[providerId]);
 
@@ -222,46 +125,55 @@ setLoading(true);
 
 
 const {
-
-data:{
-user
-
-}
-
+data:{user}
 }=await supabase.auth.getUser();
-
 
 
 setCurrentUser(user);
 
 
 
-
-
 const {
-
 data:providerData,
-
 error:providerError
 
 }=await supabase
 
-
 .from("videographers")
 
-
 .select("*")
-
 
 .eq(
 "id",
 Number(providerId)
 )
 
-
 .maybeSingle();
 
 
+
+
+
+if(providerError){
+
+console.log(providerError);
+
+setError(providerError.message);
+
+return;
+
+}
+
+
+
+
+if(!providerData){
+
+setError("Provider not found");
+
+return;
+
+}
 
 
 
@@ -272,90 +184,31 @@ providerData
 
 
 
-
-
-if(providerError){
-
-console.log(
-providerError
-);
-
-setError(
-"Failed loading provider"
-);
-
-return;
-
-}
-
-
-
-
-
-if(!providerData){
-
-
-setError(
-"Provider not found"
-);
-
-
-return;
-
-
-}
-
-
-
-
-
 setProvider(providerData);
 
 
 
 
 
-if(
-user &&
-providerData.user_id===user.id
-
-){
-
-setIsOwnProfile(true);
-
-}
-
-
-
-
-
-
-
 const {
-
 data:reviewsData
 
 }=await supabase
 
-
 .from("reviews")
 
-
 .select("*")
-
 
 .eq(
 "provider_id",
 Number(providerId)
 )
 
-
 .order(
 "created_at",
 {
 ascending:false
 }
-
 );
 
 
@@ -367,53 +220,91 @@ reviewsData || []
 );
 
 
-
 setReviewCount(
 reviewsData?.length || 0
 );
 
 
 
-
 }
+
 catch(err:any){
 
-
 console.log(err);
-
 
 setError(
 err.message
 );
 
-
 }
-finally{
 
+finally{
 
 setLoading(false);
 
-
 }
 
 
 }
-const handleSubmitReview = async () => {
+const getSkills = () => {
+
+  if (!provider?.skills) return [];
+
+  if (Array.isArray(provider.skills)) {
+    return provider.skills;
+  }
+
+  if (typeof provider.skills === "string") {
+
+    return provider.skills
+      .split(",")
+      .map((x:string)=>x.trim())
+      .filter(Boolean);
+
+  }
+
+  return [];
+
+};
+
+
+
+const getLanguages = () => {
+
+  if (!provider?.languages) return [];
+
+  if (Array.isArray(provider.languages)) {
+    return provider.languages;
+  }
+
+
+  if (typeof provider.languages === "string") {
+
+    return provider.languages
+      .split(",")
+      .map((x:string)=>x.trim())
+      .filter(Boolean);
+
+  }
+
+
+  return [];
+
+};
+
+
+
+
+
+
+async function handleSubmitReview(){
 
 
 if(!currentUser){
 
-setError("Please login to leave a review");
-
-return;
-
-}
-
-
-
-if(isOwnProfile){
-
-setError("You cannot review your own profile");
+setError(
+"Please login to leave a review"
+);
 
 return;
 
@@ -423,7 +314,9 @@ return;
 
 if(!reviewText.trim()){
 
-setError("Write a review");
+setError(
+"Write a review"
+);
 
 return;
 
@@ -438,18 +331,14 @@ setSubmitting(true);
 
 
 const {
-
 data,
-
 error
 
 }=await supabase
 
-
 .from("reviews")
 
-
-.insert([{
+.insert({
 
 provider_id:Number(providerId),
 
@@ -457,11 +346,9 @@ rater_id:currentUser.id,
 
 review:reviewText.trim()
 
-}])
-
+})
 
 .select()
-
 
 .single();
 
@@ -469,15 +356,17 @@ review:reviewText.trim()
 
 
 
-if(error) throw error;
+if(error)
+throw error;
 
 
 
-
-setReviews([
+setReviews(
+[
 data,
 ...reviews
-]);
+]
+);
 
 
 
@@ -489,151 +378,25 @@ reviewCount+1
 
 setReviewText("");
 
-setSuccess(
-"Review submitted"
-);
-
 
 
 }
 
 catch(err:any){
 
-
 setError(
 err.message
 );
-
 
 }
 
 finally{
 
-
 setSubmitting(false);
 
-
 }
 
 
-};
-
-
-
-
-
-
-
-const handleDeleteReview = async(id:string)=>{
-
-
-const confirmDelete =
-confirm(
-"Delete this review?"
-);
-
-
-
-if(!confirmDelete) return;
-
-
-
-
-const {
-
-error
-
-}=await supabase
-
-
-.from("reviews")
-
-
-.delete()
-
-
-.eq(
-"id",
-id
-);
-
-
-
-
-
-if(error){
-
-setError(
-error.message
-);
-
-return;
-
-}
-
-
-
-
-setReviews(
-reviews.filter(
-r=>r.id!==id
-)
-
-);
-
-
-
-setReviewCount(
-reviewCount-1
-);
-
-
-
-};
-
-
-
-
-
-
-
-const handleEditReview = async(id:string)=>{
-
-
-const {
-
-error
-
-}=await supabase
-
-
-.from("reviews")
-
-
-.update({
-
-review:
-editingReviewText
-
-})
-
-
-.eq(
-"id",
-id
-);
-
-
-
-
-
-if(error){
-
-setError(
-error.message
-);
-
-return;
 
 }
 
@@ -641,52 +404,8 @@ return;
 
 
 
-setReviews(
 
-reviews.map(r=>
-
-r.id===id
-
-?
-
-{
-
-...r,
-
-review:editingReviewText
-
-}
-
-:
-
-r
-
-)
-
-);
-
-
-
-
-
-setEditingReviewId(null);
-
-setEditingReviewText("");
-
-
-
-};
-
-
-
-
-
-
-
-
-
-const handleCallNow=()=>{
-
+function handleCallNow(){
 
 if(provider?.phone){
 
@@ -695,16 +414,13 @@ window.location.href =
 
 }
 
-
-};
-
+}
 
 
 
 
 
-
-const handleWhatsApp=()=>{
+function handleWhatsApp(){
 
 
 if(provider?.phone){
@@ -721,156 +437,20 @@ window.open(
 
 }
 
-
-};
-
-
-
-
-
-
-
-
-const handleEnquirySubmit =
-async(e:React.FormEvent)=>{
-
-
-e.preventDefault();
-
-
-
-if(
-!enquiryName ||
-!enquiryPhone ||
-!enquiryRequirements
-){
-
-
-setEnquiryError(
-"Fill required fields"
-);
-
-
-return;
-
 }
-
-
-
-
-
-try{
-
-
-setEnquirySubmitting(true);
-
-
-
-const {
-
-error
-
-}=await supabase
-
-
-.from("enquiries")
-
-
-.insert([{
-
-provider_id:Number(providerId),
-
-rater_id:
-currentUser?.id || null,
-
-name:enquiryName,
-
-phone:enquiryPhone,
-
-event_type:enquiryEvent,
-
-requirements:enquiryRequirements
-
-
-}]);
-
-
-
-
-
-if(error) throw error;
-
-
-
-
-setEnquirySuccess(
-"Enquiry sent successfully"
-);
-
-
-
-setEnquiryName("");
-
-setEnquiryPhone("");
-
-setEnquiryEvent("");
-
-setEnquiryRequirements("");
-
-
-
-setShowEnquiryForm(false);
-
-
-
-}
-catch(err:any){
-
-
-setEnquiryError(
-err.message
-);
-
-
-}
-finally{
-
-
-setEnquirySubmitting(false);
-
-
-}
-
-
-};
-
-
-
-
-
-
-
 if(loading){
 
+return (
 
-return(
+<div className="min-h-screen flex items-center justify-center bg-slate-50">
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-">
-
-Loading...
+<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
 
 </div>
 
 );
 
-
 }
-
 
 
 
@@ -878,50 +458,45 @@ Loading...
 
 if(!provider){
 
+return (
 
-return(
+<div className="min-h-screen flex items-center justify-center bg-slate-50">
 
-<div className="
-min-h-screen
-flex
-items-center
-justify-center
-">
+<div className="text-center">
 
-<h1 className="text-xl font-bold text-red-600">
-
+<h2 className="text-xl font-bold text-red-600">
 {error || "Provider not found"}
+</h2>
 
-</h1>
+<a
+href="/providers"
+className="text-blue-600 mt-4 inline-block"
+>
+Back to Providers
+</a>
 
+</div>
 
 </div>
 
 );
 
-
 }
+
+
+
 return (
 
-<div className="min-h-screen bg-slate-50">
+<main className="min-h-screen bg-slate-50 py-10 px-5">
 
 
-{/* HEADER */}
-
-<div className="bg-white border-b">
+<div className="max-w-5xl mx-auto bg-white rounded-3xl shadow p-8">
 
 
-<div className="max-w-5xl mx-auto p-6">
+{/* Profile Image */}
 
-
-<div className="flex flex-col md:flex-row gap-5 items-center">
-
-
-<div className="w-28 h-28 rounded-full overflow-hidden bg-slate-200">
-
-
-{provider.profile_image ? (
-
+{
+provider.profile_image &&
 
 <img
 
@@ -929,58 +504,28 @@ src={provider.profile_image}
 
 alt={provider.name}
 
-className="w-full h-full object-cover"
+className="
+w-full
+h-80
+object-cover
+rounded-3xl
+"
 
 />
 
-
-):(
-
-
-<div className="flex items-center justify-center h-full text-4xl">
-
-{provider.name.charAt(0)}
-
-</div>
-
-
-)}
-
-
-</div>
+}
 
 
 
-
-
-<div className="flex-1">
-
-
-<div className="flex gap-2 items-center">
-
-
-<h1 className="text-3xl font-bold">
+<h1 className="text-4xl font-bold mt-8 text-slate-900">
 
 {provider.name}
 
 </h1>
 
 
-{provider.verified && (
 
-<CheckCircle
-className="text-green-600"
-/>
-
-)}
-
-
-</div>
-
-
-
-
-<p className="text-slate-600">
+<p className="text-blue-600 font-semibold mt-2">
 
 {provider.category}
 
@@ -988,15 +533,11 @@ className="text-green-600"
 
 
 
-<p className="text-sm text-slate-500 flex gap-2 mt-2">
+<div className="mt-4 flex items-center gap-2 text-slate-600">
 
-<MapPin size={16}/>
+<MapPin size={18}/>
 
-{provider.district}
-
-</p>
-
-
+{provider.district || "Location not added"}
 
 </div>
 
@@ -1004,8 +545,19 @@ className="text-green-600"
 
 
 
+<p className="mt-6 text-slate-700">
 
-<div className="flex gap-3">
+{provider.about || "No description added"}
+
+</p>
+
+
+
+
+
+{/* Contact Buttons */}
+
+<div className="flex gap-4 mt-8">
 
 
 <button
@@ -1015,20 +567,19 @@ onClick={handleCallNow}
 className="
 bg-blue-600
 text-white
-px-5
+px-6
 py-3
 rounded-xl
 flex
 gap-2
+items-center
 "
 
 >
 
-
 <Phone size={18}/>
 
 Call
-
 
 </button>
 
@@ -1043,20 +594,19 @@ onClick={handleWhatsApp}
 className="
 bg-green-600
 text-white
-px-5
+px-6
 py-3
 rounded-xl
 flex
 gap-2
+items-center
 "
 
 >
 
-
 <MessageCircle size={18}/>
 
 WhatsApp
-
 
 </button>
 
@@ -1066,84 +616,43 @@ WhatsApp
 
 
 
-</div>
-
-
-</div>
-
-
-</div>
 
 
 
+{/* Skills */}
+
+<div className="mt-10">
 
 
-
-
-
-{/* MAIN */}
-
-
-<div className="max-w-5xl mx-auto p-6 grid md:grid-cols-2 gap-6">
-
-
-
-
-
-<div className="space-y-6">
-
-
-
-<div className="bg-white rounded-3xl p-6 shadow">
-
-
-<h2 className="text-xl font-bold mb-3">
-
-About
-
-</h2>
-
-
-<p className="text-slate-600">
-
-{provider.about || "No description"}
-
-</p>
-
-
-</div>
-
-
-
-
-
-
-
-<div className="bg-white rounded-3xl p-6 shadow">
-
-
-<h2 className="text-xl font-bold mb-3">
+<h2 className="text-xl font-bold mb-4">
 
 Skills
 
 </h2>
 
 
+
 <div className="flex flex-wrap gap-2">
 
 
-{provider.skills?.map((skill,i)=>(
+{
+
+getSkills().length > 0
+
+?
+
+getSkills().map((skill:string,index:number)=>(
 
 
 <span
 
-key={i}
+key={index}
 
 className="
 bg-blue-50
 text-blue-700
-px-3
-py-1
+px-4
+py-2
 rounded-full
 "
 
@@ -1154,7 +663,20 @@ rounded-full
 </span>
 
 
-))}
+))
+
+
+:
+
+<p className="text-slate-500">
+
+No skills added
+
+</p>
+
+
+}
+
 
 
 </div>
@@ -1165,50 +687,73 @@ rounded-full
 
 
 
-</div>
 
 
 
 
 
+{/* Languages */}
+
+<div className="mt-8">
 
 
-<div className="space-y-6">
+<h2 className="text-xl font-bold mb-4 flex gap-2 items-center">
 
+<Languages size={20}/>
 
-
-<div className="bg-white rounded-3xl p-6 shadow">
-
-
-<h2 className="font-bold text-xl mb-3">
-
-Details
+Languages
 
 </h2>
 
 
 
-<p>
+<div className="flex flex-wrap gap-2">
 
-📍 {provider.location || provider.district}
+
+{
+
+getLanguages().length > 0
+
+?
+
+getLanguages().map((lang:string,index:number)=>(
+
+
+<span
+
+key={index}
+
+className="
+bg-green-50
+text-green-700
+px-4
+py-2
+rounded-full
+"
+
+>
+
+{lang}
+
+</span>
+
+
+))
+
+
+:
+
+<p className="text-slate-500">
+
+No languages added
 
 </p>
 
 
-<p className="mt-3">
-
-🏆 {provider.experience || "Experience not added"}
-
-</p>
+}
 
 
-
-<p className="mt-3">
-
-🌐 {provider.languages?.join(", ")}
-
-</p>
-
+</div>
 
 
 </div>
@@ -1218,67 +763,39 @@ Details
 
 
 
-<div className="bg-white rounded-3xl p-6 shadow">
 
 
-<h2 className="font-bold text-xl mb-3">
 
-Online
+{/* Experience */}
+
+{
+
+provider.experience &&
+
+<div className="mt-8">
+
+
+<h2 className="text-xl font-bold flex gap-2 items-center">
+
+<Award size={20}/>
+
+Experience
 
 </h2>
 
 
 
-{provider.website && (
+<p className="mt-2 text-slate-600">
 
-<a
+{provider.experience} Years
 
-href={provider.website}
-
-target="_blank"
-
-className="text-blue-600 block"
-
->
-
-Website
-
-</a>
-
-)}
-
-
-
-{provider.youtube && (
-
-<a
-
-href={provider.youtube}
-
-target="_blank"
-
-className="text-red-600 block"
-
->
-
-YouTube
-
-</a>
-
-)}
-
+</p>
 
 
 </div>
 
 
-
-</div>
-
-
-
-
-</div>
+}
 
 
 
@@ -1288,16 +805,12 @@ YouTube
 
 
 
-{/* REVIEWS */}
+{/* Reviews */}
+
+<div className="mt-10">
 
 
-<div className="max-w-5xl mx-auto p-6">
-
-
-<div className="bg-white rounded-3xl p-6 shadow">
-
-
-<h2 className="text-xl font-bold mb-4">
+<h2 className="text-2xl font-bold">
 
 Reviews ({reviewCount})
 
@@ -1305,11 +818,6 @@ Reviews ({reviewCount})
 
 
 
-
-{currentUser && !isOwnProfile && (
-
-
-<div>
 
 
 <textarea
@@ -1320,16 +828,20 @@ onChange={
 e=>setReviewText(e.target.value)
 }
 
-placeholder="Write review..."
+placeholder="Write your review"
 
 className="
 w-full
 border
 rounded-xl
-p-3
+p-4
+mt-4
 "
 
+rows={4}
+
 />
+
 
 
 <button
@@ -1342,22 +854,23 @@ className="
 mt-3
 bg-blue-600
 text-white
-px-5
-py-2
+px-6
+py-3
 rounded-xl
 "
 
 >
 
-Submit Review
+{
+submitting
+?
+"Submitting..."
+:
+"Submit Review"
+}
 
 </button>
 
-
-</div>
-
-
-)}
 
 
 
@@ -1368,7 +881,8 @@ Submit Review
 
 
 {
-reviews.map(review=>(
+
+reviews.map((review)=>(
 
 
 <div
@@ -1380,64 +894,22 @@ border-b
 pb-4
 "
 
->
-
-
-<div className="flex justify-between">
-
-
-<b>
-
-{
-review.rater_id===currentUser?.id
-?
-"You"
-:
-"User"
-}
-
-</b>
-
-
-
-
-{
-review.rater_id===currentUser?.id && (
-
-<div className="flex gap-3">
-
-
-<button
-
-onClick={()=>handleDeleteReview(review.id)}
-
-className="text-red-600"
 
 >
 
-<Trash2 size={16}/>
 
-</button>
-
-
-</div>
-
-)
-
-}
-
-
-</div>
-
-
-
-
-<p className="mt-2 text-slate-700">
+<p className="text-slate-700">
 
 {review.review}
 
 </p>
 
+
+<p className="text-xs text-slate-400">
+
+{new Date(review.created_at).toLocaleDateString()}
+
+</p>
 
 
 </div>
@@ -1445,24 +917,21 @@ className="text-red-600"
 
 ))
 
+
 }
 
 
-
 </div>
 
 
 </div>
 
 
-</div>
-
-
-
-
 
 </div>
 
+
+</main>
 
 );
 
