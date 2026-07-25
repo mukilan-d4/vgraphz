@@ -3,7 +3,8 @@
 import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import ProviderCard from "@/components/ProviderCard";
+import Link from "next/link";
+import { Phone, MessageCircle, Globe, FolderOpen } from "lucide-react";
 
 export default function ProvidersPage() {
   const router = useRouter();
@@ -18,6 +19,16 @@ export default function ProvidersPage() {
     district: searchParams.get("district") || "",
     category: searchParams.get("category") || ""
   });
+
+  // Helper to get online presence links
+  const getOnlineLinks = (provider: any) => {
+    const links = [];
+    if (provider.website) links.push({ type: "website", url: provider.website, label: "Website", emoji: "🌐" });
+    if (provider.instagram) links.push({ type: "instagram", url: provider.instagram, label: "Instagram", emoji: "📸" });
+    if (provider.youtube) links.push({ type: "youtube", url: provider.youtube, label: "YouTube", emoji: "▶️" });
+    if (provider.portfolio) links.push({ type: "portfolio", url: provider.portfolio, label: "Portfolio", emoji: "📁" });
+    return links;
+  };
 
   async function loadProviders() {
     setLoading(true);
@@ -120,6 +131,17 @@ export default function ProvidersPage() {
     });
   }
 
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          <p className="mt-4 text-slate-600 font-medium">Loading professionals...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 pt-28">
       <div className="max-w-7xl mx-auto px-6">
@@ -144,7 +166,7 @@ export default function ProvidersPage() {
                 name: e.target.value
               })
             }
-            className="rounded-2xl border px-4 py-3"
+            className="rounded-2xl border px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
           />
 
           <select
@@ -155,7 +177,7 @@ export default function ProvidersPage() {
                 district: e.target.value
               })
             }
-            className="rounded-2xl border px-4 py-3"
+            className="rounded-2xl border px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
           >
             <option value="">All Districts</option>
             <option value="Ariyalur">Ariyalur</option>
@@ -206,7 +228,7 @@ export default function ProvidersPage() {
                 category: e.target.value
               })
             }
-            className="rounded-2xl border px-4 py-3"
+            className="rounded-2xl border px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
           >
             <option value="">All Categories</option>
             <option value="Photographer">Photographer</option>
@@ -217,7 +239,7 @@ export default function ProvidersPage() {
 
           <button
             type="submit"
-            className="rounded-2xl bg-blue-600 text-white font-semibold"
+            className="rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
           >
             Search
           </button>
@@ -225,7 +247,7 @@ export default function ProvidersPage() {
 
         <button
           onClick={clearFilters}
-          className="mt-5 block mx-auto text-blue-600 font-semibold"
+          className="mt-5 block mx-auto text-blue-600 font-semibold hover:text-blue-700 transition"
         >
           Clear Filters
         </button>
@@ -234,16 +256,119 @@ export default function ProvidersPage() {
           Showing {totalCount} professionals
         </div>
 
-        {loading ? (
-          <div className="text-center mt-10">Loading...</div>
-        ) : (
-          <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 pb-10">
-            {providers.map((provider) => (
-              <ProviderCard
+        <div className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 pb-10">
+          {providers.map((provider) => {
+            const onlineLinks = getOnlineLinks(provider);
+            const hasLinks = onlineLinks.length > 0;
+
+            return (
+              <div
                 key={provider.id}
-                provider={provider}
-              />
-            ))}
+                className="group rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl flex flex-col h-full"
+              >
+                <div className="p-7 flex-1 flex flex-col">
+                  {/* Name and Verified Badge */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
+                      {provider.name}
+                    </h3>
+                    <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                      ✔ Verified
+                    </span>
+                  </div>
+
+                  {/* Category */}
+                  <p className="mt-4 font-semibold text-blue-600">{provider.category}</p>
+
+                  {/* Location */}
+                  <p className="mt-2 leading-7 text-slate-600">📍 {provider.district}</p>
+
+                  {/* Experience */}
+                  {provider.experience && (
+                    <p className="mt-2 leading-7 text-slate-600">⭐ {provider.experience} Years Experience</p>
+                  )}
+
+                  {/* Reviews Count */}
+                  {provider.review_count !== undefined && (
+                    <p className="mt-2 text-sm text-slate-500">📝 {provider.review_count} {provider.review_count === 1 ? 'Review' : 'Reviews'}</p>
+                  )}
+
+                  {/* Online Presence Links */}
+                  {hasLinks && (
+                    <div className="mt-4">
+                      <p className="text-xs font-semibold text-slate-500 mb-2">🔗 Online Presence</p>
+                      <div className="flex flex-wrap gap-2">
+                        {onlineLinks.map((link, index) => (
+                          <a
+                            key={index}
+                            href={link.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 hover:scale-105 ${
+                              link.type === "website"
+                                ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                : link.type === "instagram"
+                                ? "bg-pink-50 text-pink-600 hover:bg-pink-100"
+                                : link.type === "youtube"
+                                ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+                            }`}
+                          >
+                            <span>{link.emoji}</span>
+                            {link.label}
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Spacer to push buttons to bottom */}
+                  <div className="flex-1"></div>
+
+                  {/* ACTION BUTTONS */}
+                  <div className="mt-4 flex gap-2">
+                    <a
+                      href={`tel:${provider.phone}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                    >
+                      <Phone size={16} />
+                      Call
+                    </a>
+                    <a
+                      href={`https://wa.me/${provider.whatsapp || provider.phone}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                    >
+                      <MessageCircle size={16} />
+                      WhatsApp
+                    </a>
+                  </div>
+
+                  {/* View Profile Button */}
+                  <Link
+                    href={`/providers/${provider.id}`}
+                    className="mt-3 block w-full rounded-2xl bg-purple-600 hover:bg-blue-600 py-2.5 text-center font-semibold text-white transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                  >
+                    View Profile
+                  </Link>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {providers.length === 0 && (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🔍</div>
+            <h3 className="text-2xl font-bold text-slate-900">No professionals found</h3>
+            <p className="text-slate-600 mt-2">Try adjusting your search or filters</p>
+            <button
+              onClick={clearFilters}
+              className="mt-4 inline-block rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 py-3 text-white font-semibold transition-all duration-200 hover:shadow-lg"
+            >
+              Clear All Filters
+            </button>
           </div>
         )}
       </div>
