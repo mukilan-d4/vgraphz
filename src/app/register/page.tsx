@@ -28,12 +28,10 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("Weak");
   const [phone, setPhone] = useState("");
-  const [phoneError, setPhoneError] = useState("");
   const [category, setCategory] = useState("");
   const [district, setDistrict] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [about, setAbout] = useState("");
-  const [location, setLocation] = useState("");
   const [skills, setSkills] = useState("");
   const [experience, setExperience] = useState("");
   const [languages, setLanguages] = useState("");
@@ -42,44 +40,27 @@ export default function RegisterPage() {
   const [youtube, setYoutube] = useState("");
   const [portfolio, setPortfolio] = useState("");
   const [error, setError] = useState("");
-  const [emailError, setEmailError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState("");
   const [emailValid, setEmailValid] = useState<boolean | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
 
   // Validate phone number - exactly 10 digits
   const validatePhone = (value: string): { valid: boolean; message: string } => {
-    // Remove any non-digit characters
     const digitsOnly = value.replace(/\D/g, '');
-    
-    if (!digitsOnly) {
-      return { valid: false, message: "Phone number is required" };
-    }
-    
-    if (digitsOnly.length < 10) {
-      return { valid: false, message: `Phone number must be 10 digits (${digitsOnly.length}/10)` };
-    }
-    
-    if (digitsOnly.length > 10) {
-      return { valid: false, message: `Phone number must be 10 digits (${digitsOnly.length}/10 - too many)` };
-    }
-    
-    // Check if all are digits
-    if (!/^\d{10}$/.test(digitsOnly)) {
-      return { valid: false, message: "Phone number must contain only digits" };
-    }
-    
+    if (!digitsOnly) return { valid: false, message: "Phone number is required" };
+    if (digitsOnly.length < 10) return { valid: false, message: `Phone number must be 10 digits (${digitsOnly.length}/10)` };
+    if (digitsOnly.length > 10) return { valid: false, message: `Phone number must be 10 digits (${digitsOnly.length}/10 - too many)` };
+    if (!/^\d{10}$/.test(digitsOnly)) return { valid: false, message: "Phone number must contain only digits" };
     return { valid: true, message: "✓ Valid phone number" };
   };
 
   // Handle phone input change
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Allow only digits
     const digitsOnly = value.replace(/\D/g, '');
     setPhone(digitsOnly);
-    
-    // Validate
     const validation = validatePhone(digitsOnly);
     setPhoneError(validation.valid ? "" : validation.message);
   };
@@ -89,54 +70,42 @@ export default function RegisterPage() {
     const trimmed = email.trim();
     if (!trimmed) return { valid: false, message: "Email is required" };
     if (!trimmed.includes("@")) return { valid: false, message: "Email must contain @ symbol" };
-    
     const parts = trimmed.split("@");
     if (parts.length !== 2) return { valid: false, message: "Invalid email format" };
-    
     const localPart = parts[0];
     const domainPart = parts[1];
-    
     if (!localPart || localPart.length === 0) return { valid: false, message: "Email must have a username before @" };
     if (!domainPart || domainPart.length === 0) return { valid: false, message: "Email must have a domain after @" };
     if (!domainPart.includes(".")) return { valid: false, message: "Email must have a valid domain (e.g., .com, .in)" };
-    
     const domainParts = domainPart.split(".");
     if (domainParts.length < 2) return { valid: false, message: "Email must have a valid domain extension" };
-    
     const tld = domainParts[domainParts.length - 1];
     if (!tld || tld.length < 2) return { valid: false, message: "Email must have a valid domain extension (e.g., .com, .in)" };
     if (trimmed.includes(" ")) return { valid: false, message: "Email cannot contain spaces" };
-    
     const invalidChars = /[!$%^&*()+=|{}:;<>?]/.test(localPart);
     if (invalidChars) return { valid: false, message: "Email contains invalid characters" };
-    
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (!emailRegex.test(trimmed)) return { valid: false, message: "Please enter a valid email address" };
-    
     return { valid: true, message: "" };
   };
 
   // Check if email exists
   const checkEmailExists = async (email: string) => {
     if (!email || email.length < 5) return;
-
     const validation = validateEmailFormat(email);
     if (!validation.valid) {
       setEmailValid(false);
       setEmailError(validation.message);
       return;
     }
-
     setCheckingEmail(true);
     setEmailError("");
-
     try {
       const { data, error } = await supabase
         .from("videographers")
         .select("email")
         .eq("email", email.trim())
         .maybeSingle();
-
       if (data) {
         setEmailValid(false);
         setEmailError("This email is already registered. Please login.");
@@ -158,7 +127,6 @@ export default function RegisterPage() {
     setEmail(value);
     setEmailError("");
     setEmailValid(null);
-
     if (value.length > 0) {
       const validation = validateEmailFormat(value);
       if (!validation.valid) {
@@ -166,7 +134,6 @@ export default function RegisterPage() {
         setEmailError(validation.message);
         return;
       }
-
       clearTimeout((window as any).emailTimeout);
       (window as any).emailTimeout = setTimeout(() => {
         checkEmailExists(value);
@@ -256,18 +223,18 @@ export default function RegisterPage() {
       return;
     }
 
+    // ✅ REMOVED: location field - doesn't exist in database
     const { error: profileError } = await supabase
       .from("videographers")
       .insert({
         user_id: user.id,
         name,
         email: email.trim(),
-        phone: phone,
+        phone,
         category,
         district,
         whatsapp: whatsapp || null,
         about: about || null,
-        location: location || null,
         skills: skills || null,
         experience: experience || null,
         languages: languages || null,
@@ -532,20 +499,6 @@ export default function RegisterPage() {
                 onChange={(e) => setAbout(e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition resize-none"
                 rows={3}
-              />
-            </div>
-
-            {/* Location */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Location
-              </label>
-              <input
-                type="text"
-                placeholder="Your city/area"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
               />
             </div>
 
