@@ -39,7 +39,7 @@ export default function RegisterPage() {
   const [instagram, setInstagram] = useState("");
   const [youtube, setYoutube] = useState("");
   const [portfolio, setPortfolio] = useState("");
-  const [address, setAddress] = useState(""); // ✅ New address field
+  const [address, setAddress] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
@@ -47,7 +47,9 @@ export default function RegisterPage() {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [phoneError, setPhoneError] = useState("");
 
-  // ✅ Generate Google Maps link from address
+  // Character limit for address
+  const MAX_ADDRESS_LENGTH = 200;
+
   const getGoogleMapsLink = (address: string) => {
     if (!address.trim()) return null;
     const encodedAddress = encodeURIComponent(address.trim());
@@ -227,7 +229,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // ✅ Insert with address field (optional)
     const { error: profileError } = await supabase
       .from("videographers")
       .insert({
@@ -246,7 +247,7 @@ export default function RegisterPage() {
         instagram: instagram || null,
         youtube: youtube || null,
         portfolio: portfolio || null,
-        address: address || null, // ✅ Added address field
+        address: address || null,
         status: "pending",
         approved: false
       });
@@ -257,12 +258,14 @@ export default function RegisterPage() {
       return;
     }
 
-    // ✅ Redirect regardless of password strength
     router.push("/login?registered=true");
   }
 
   const emailStatus = getEmailStatus();
   const mapsLink = getGoogleMapsLink(address);
+  const addressLength = address.length;
+  const isAddressOverLimit = addressLength > MAX_ADDRESS_LENGTH;
+  const remainingChars = MAX_ADDRESS_LENGTH - addressLength;
 
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
@@ -292,7 +295,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Email with Validation */}
+            {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Email Address *
@@ -397,7 +400,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Phone Number */}
+            {/* Phone */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Phone Number *
@@ -493,33 +496,66 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Address with Map Link */}
+            {/* Address with Map Button Always Visible */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Address (Optional)
               </label>
               <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  placeholder="Enter your address (optional)"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
-                />
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Enter your address (optional)"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    maxLength={MAX_ADDRESS_LENGTH}
+                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-16 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                  />
+                  <div className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-medium ${
+                    isAddressOverLimit ? "text-red-600" : "text-slate-400"
+                  }`}>
+                    {isAddressOverLimit ? (
+                      <span className="text-red-600 font-bold">-{remainingChars}</span>
+                    ) : (
+                      <span>{remainingChars}</span>
+                    )}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (address.trim()) {
+                      window.open(mapsLink || `https://www.google.com/maps`, "_blank");
+                    } else {
+                      window.open("https://www.google.com/maps", "_blank");
+                    }
+                  }}
+                  className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl transition-all duration-200 whitespace-nowrap hover:shadow-md active:scale-95"
+                  title="Open Google Maps"
+                >
+                  <MapPin size={18} />
+                  <span className="hidden sm:inline text-sm font-medium">Map</span>
+                </button>
+              </div>
+              <div className="flex justify-between mt-1">
+                <p className="text-xs text-slate-400">
+                  {isAddressOverLimit ? (
+                    <span className="text-red-600 font-medium">⚠️ Exceeded limit by {addressLength - MAX_ADDRESS_LENGTH} characters</span>
+                  ) : (
+                    `${addressLength}/${MAX_ADDRESS_LENGTH} characters`
+                  )}
+                </p>
                 {mapsLink && (
                   <a
                     href={mapsLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl transition-all duration-200 whitespace-nowrap"
-                    title="Open in Google Maps"
+                    className="text-xs text-blue-600 hover:text-blue-700 font-medium transition"
                   >
-                    <MapPin size={18} />
-                    <span className="hidden sm:inline text-sm">Map</span>
+                    View on Map →
                   </a>
                 )}
               </div>
-              <p className="mt-1 text-xs text-slate-400">Enter your address to show location on map</p>
             </div>
 
             {/* About */}
