@@ -51,7 +51,6 @@ export default function ProviderDetailPage() {
   const [success, setSuccess] = useState("");
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editingReviewText, setEditingReviewText] = useState("");
-  const [editingPassword, setEditingPassword] = useState("");
   const [showEnquiryForm, setShowEnquiryForm] = useState(false);
   const [enquiryName, setEnquiryName] = useState("");
   const [enquiryPhone, setEnquiryPhone] = useState("");
@@ -63,9 +62,6 @@ export default function ProviderDetailPage() {
   
   // State for hiding comments only
   const [showComments, setShowComments] = useState(true);
-
-  // Store reviewer name (optional - ask user to set a name for their review)
-  const [reviewerName, setReviewerName] = useState("");
 
   useEffect(() => {
     loadData();
@@ -142,8 +138,7 @@ export default function ProviderDetailPage() {
         .insert({
           provider_id: Number(providerId),
           rater_id: currentUser?.id || null,
-          review: reviewText.trim(),
-          reviewer_name: reviewerName.trim() || null
+          review: reviewText.trim()
         })
         .select()
         .single();
@@ -153,7 +148,6 @@ export default function ProviderDetailPage() {
       setReviews([data, ...reviews]);
       setReviewCount(reviewCount + 1);
       setReviewText("");
-      setReviewerName("");
       setSuccess("Review submitted successfully");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
@@ -577,14 +571,6 @@ export default function ProviderDetailPage() {
           {/* Write Review - Always Visible */}
           {!isOwnProfile && (
             <div className="mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                <input
-                  placeholder="Your Name (optional)"
-                  value={reviewerName}
-                  onChange={(e) => setReviewerName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                />
-              </div>
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
@@ -623,16 +609,11 @@ export default function ProviderDetailPage() {
                         <User size={16} className="text-blue-600" />
                       </div>
                       <span className="font-semibold text-slate-900 text-sm">
-                        {review.reviewer_name || "User"}
+                        User
                       </span>
                       <span className="text-xs text-slate-400">
                         {new Date(review.created_at).toLocaleDateString()}
                       </span>
-                      {review.rater_id === currentUser?.id && (
-                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                          Your Review
-                        </span>
-                      )}
                     </div>
 
                     {editingReviewId === review.id ? (
