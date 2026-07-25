@@ -266,6 +266,7 @@ export default function RegisterPage() {
   const addressLength = address.length;
   const isAddressOverLimit = addressLength > MAX_ADDRESS_LENGTH;
   const remainingChars = MAX_ADDRESS_LENGTH - addressLength;
+  const hasAddress = address.trim().length > 0;
 
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
@@ -368,7 +369,6 @@ export default function RegisterPage() {
                   "text-green-600"
                 }>{passwordStrength}</span>
               </p>
-              {/* ✅ Changed: Minimum 8 characters in RED */}
               <p className="mt-1 text-xs text-red-600 font-medium">
                 Minimum 8 characters
               </p>
@@ -499,16 +499,16 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Address */}
+            {/* Address - Map icon always visible, red/green text changes */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Address (Optional)
+                Address
               </label>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1">
                   <input
                     type="text"
-                    placeholder="Enter your address (optional)"
+                    placeholder="Enter your address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     maxLength={MAX_ADDRESS_LENGTH}
@@ -524,18 +524,17 @@ export default function RegisterPage() {
                     )}
                   </div>
                 </div>
-                {address && (
-                  <a
-                    href={mapsLink || `https://www.google.com/maps`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl transition whitespace-nowrap"
-                    title="Open in Google Maps"
-                  >
-                    <MapPin size={18} />
-                    <span className="hidden sm:inline text-sm">Map</span>
-                  </a>
-                )}
+                {/* Map icon always visible */}
+                <a
+                  href={mapsLink || `https://www.google.com/maps`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl transition whitespace-nowrap"
+                  title="Open in Google Maps"
+                >
+                  <MapPin size={18} />
+                  <span className="hidden sm:inline text-sm">Map</span>
+                </a>
               </div>
               <div className="flex justify-between mt-1">
                 <p className="text-xs text-slate-400">
@@ -546,9 +545,9 @@ export default function RegisterPage() {
                   )}
                 </p>
               </div>
-              {/* ✅ Changed: Copy address from map in RED */}
-              <p className="mt-1 text-xs text-red-600 font-medium">
-                Copy address from map
+              {/* Red text changes to green when address is filled */}
+              <p className={`mt-1 text-xs font-medium ${hasAddress ? "text-green-600" : "text-red-600"}`}>
+                {hasAddress ? "✓ Copied" : "Copy address from map"}
               </p>
             </div>
 
