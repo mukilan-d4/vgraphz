@@ -138,7 +138,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* FEATURED CREATORS WITH CALL & WHATSAPP BUTTONS */}
+      {/* FEATURED CREATORS - Without Profile Pictures */}
       <section className="bg-slate-50 py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex items-center justify-between">
@@ -157,12 +157,6 @@ export default async function Home() {
                 key={provider.id}
                 className="group rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl"
               >
-                <div className="flex justify-center pt-8">
-                  <img
-                    src={provider.profile_image || "/default-profile.png"}
-                    className="h-32 w-32 rounded-full object-cover border-4 border-slate-200"
-                  />
-                </div>
                 <div className="p-7">
                   <div className="flex items-center justify-between">
                     <h3 className="text-2xl font-bold text-slate-900">{provider.name}</h3>
@@ -176,7 +170,7 @@ export default async function Home() {
                     <p className="mt-2 leading-7 text-slate-600">⭐ {provider.experience} Years Experience</p>
                   )}
 
-                  {/* ACTION BUTTONS - Call & WhatsApp on card */}
+                  {/* ACTION BUTTONS */}
                   <div className="mt-4 flex gap-2">
                     <a
                       href={`tel:${provider.phone}`}
