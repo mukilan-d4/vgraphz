@@ -28,6 +28,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("Weak");
   const [phone, setPhone] = useState("");
+  const [phoneError, setPhoneError] = useState("");
   const [category, setCategory] = useState("");
   const [district, setDistrict] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
@@ -46,77 +47,76 @@ export default function RegisterPage() {
   const [emailValid, setEmailValid] = useState<boolean | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
 
-  // Advanced email validation
-  const validateEmailFormat = (email: string): { valid: boolean; message: string } => {
-    // Remove whitespace
-    const trimmed = email.trim();
+  // Validate phone number - exactly 10 digits
+  const validatePhone = (value: string): { valid: boolean; message: string } => {
+    // Remove any non-digit characters
+    const digitsOnly = value.replace(/\D/g, '');
     
-    // Check if empty
-    if (!trimmed) {
-      return { valid: false, message: "Email is required" };
+    if (!digitsOnly) {
+      return { valid: false, message: "Phone number is required" };
     }
-
-    // Check for @ symbol
-    if (!trimmed.includes("@")) {
-      return { valid: false, message: "Email must contain @ symbol" };
+    
+    if (digitsOnly.length < 10) {
+      return { valid: false, message: `Phone number must be 10 digits (${digitsOnly.length}/10)` };
     }
+    
+    if (digitsOnly.length > 10) {
+      return { valid: false, message: `Phone number must be 10 digits (${digitsOnly.length}/10 - too many)` };
+    }
+    
+    // Check if all are digits
+    if (!/^\d{10}$/.test(digitsOnly)) {
+      return { valid: false, message: "Phone number must contain only digits" };
+    }
+    
+    return { valid: true, message: "✓ Valid phone number" };
+  };
 
-    // Check for domain (must have something after @)
+  // Handle phone input change
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Allow only digits
+    const digitsOnly = value.replace(/\D/g, '');
+    setPhone(digitsOnly);
+    
+    // Validate
+    const validation = validatePhone(digitsOnly);
+    setPhoneError(validation.valid ? "" : validation.message);
+  };
+
+  // Validate email format
+  const validateEmailFormat = (email: string): { valid: boolean; message: string } => {
+    const trimmed = email.trim();
+    if (!trimmed) return { valid: false, message: "Email is required" };
+    if (!trimmed.includes("@")) return { valid: false, message: "Email must contain @ symbol" };
+    
     const parts = trimmed.split("@");
-    if (parts.length !== 2) {
-      return { valid: false, message: "Invalid email format" };
-    }
-
+    if (parts.length !== 2) return { valid: false, message: "Invalid email format" };
+    
     const localPart = parts[0];
     const domainPart = parts[1];
-
-    // Check if local part exists
-    if (!localPart || localPart.length === 0) {
-      return { valid: false, message: "Email must have a username before @" };
-    }
-
-    // Check if domain exists
-    if (!domainPart || domainPart.length === 0) {
-      return { valid: false, message: "Email must have a domain after @" };
-    }
-
-    // Check if domain has a dot (e.g., .com, .in)
-    if (!domainPart.includes(".")) {
-      return { valid: false, message: "Email must have a valid domain (e.g., .com, .in)" };
-    }
-
-    // Check if domain has something after the dot
+    
+    if (!localPart || localPart.length === 0) return { valid: false, message: "Email must have a username before @" };
+    if (!domainPart || domainPart.length === 0) return { valid: false, message: "Email must have a domain after @" };
+    if (!domainPart.includes(".")) return { valid: false, message: "Email must have a valid domain (e.g., .com, .in)" };
+    
     const domainParts = domainPart.split(".");
-    if (domainParts.length < 2) {
-      return { valid: false, message: "Email must have a valid domain extension" };
-    }
-
+    if (domainParts.length < 2) return { valid: false, message: "Email must have a valid domain extension" };
+    
     const tld = domainParts[domainParts.length - 1];
-    if (!tld || tld.length < 2) {
-      return { valid: false, message: "Email must have a valid domain extension (e.g., .com, .in)" };
-    }
-
-    // Check for spaces
-    if (trimmed.includes(" ")) {
-      return { valid: false, message: "Email cannot contain spaces" };
-    }
-
-    // Check for invalid special characters
+    if (!tld || tld.length < 2) return { valid: false, message: "Email must have a valid domain extension (e.g., .com, .in)" };
+    if (trimmed.includes(" ")) return { valid: false, message: "Email cannot contain spaces" };
+    
     const invalidChars = /[!$%^&*()+=|{}:;<>?]/.test(localPart);
-    if (invalidChars) {
-      return { valid: false, message: "Email contains invalid characters" };
-    }
-
-    // Full regex check
+    if (invalidChars) return { valid: false, message: "Email contains invalid characters" };
+    
     const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-    if (!emailRegex.test(trimmed)) {
-      return { valid: false, message: "Please enter a valid email address" };
-    }
-
+    if (!emailRegex.test(trimmed)) return { valid: false, message: "Please enter a valid email address" };
+    
     return { valid: true, message: "" };
   };
 
-  // Check if email exists in the system
+  // Check if email exists
   const checkEmailExists = async (email: string) => {
     if (!email || email.length < 5) return;
 
@@ -145,7 +145,6 @@ export default function RegisterPage() {
         setEmailError("");
       }
     } catch (err) {
-      // If we can't check, assume it's valid
       setEmailValid(true);
       setEmailError("");
     } finally {
@@ -157,13 +156,10 @@ export default function RegisterPage() {
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
-    
-    // Reset states
     setEmailError("");
     setEmailValid(null);
 
     if (value.length > 0) {
-      // Validate format
       const validation = validateEmailFormat(value);
       if (!validation.valid) {
         setEmailValid(false);
@@ -171,7 +167,6 @@ export default function RegisterPage() {
         return;
       }
 
-      // If format is valid, check if exists (debounced)
       clearTimeout((window as any).emailTimeout);
       (window as any).emailTimeout = setTimeout(() => {
         checkEmailExists(value);
@@ -179,7 +174,7 @@ export default function RegisterPage() {
     }
   };
 
-  // Get email validation status message
+  // Get email validation status
   const getEmailStatus = () => {
     if (!email) return null;
     if (emailValid === true) return { type: "valid", message: "✓ Email is valid and available" };
@@ -210,10 +205,18 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
-    // Validate email format before submitting
+    // Validate email
     const validation = validateEmailFormat(email);
     if (!validation.valid) {
       setError(validation.message);
+      setLoading(false);
+      return;
+    }
+
+    // Validate phone
+    const phoneValidation = validatePhone(phone);
+    if (!phoneValidation.valid) {
+      setError(phoneValidation.message);
       setLoading(false);
       return;
     }
@@ -259,7 +262,7 @@ export default function RegisterPage() {
         user_id: user.id,
         name,
         email: email.trim(),
-        phone,
+        phone: phone,
         category,
         district,
         whatsapp: whatsapp || null,
@@ -420,19 +423,48 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Phone */}
+            {/* Phone Number with Validation */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Phone Number *
               </label>
-              <input
-                type="tel"
-                placeholder="Enter your phone number"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="tel"
+                  placeholder="Enter 10 digit phone number"
+                  value={phone}
+                  onChange={handlePhoneChange}
+                  maxLength={10}
+                  className={`w-full rounded-2xl border px-4 py-3 pr-12 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition ${
+                    phone.length === 10 && !phoneError
+                      ? "border-green-500 focus:border-green-500 focus:ring-green-500/10"
+                      : phone.length > 0 && phoneError
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                      : "border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
+                  }`}
+                  required
+                />
+                {phone.length > 0 && (
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3">
+                    {phone.length === 10 && !phoneError ? (
+                      <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : phoneError ? (
+                      <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              {phoneError && (
+                <p className="mt-1 text-xs text-red-600">{phoneError}</p>
+              )}
+              {phone.length === 10 && !phoneError && phone.length > 0 && (
+                <p className="mt-1 text-xs text-green-600">✓ Valid phone number</p>
+              )}
+              <p className="mt-1 text-xs text-slate-400">Enter exactly 10 digits</p>
             </div>
 
             {/* Category */}
@@ -630,7 +662,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading || emailValid === false}
+              disabled={loading || emailValid === false || !!phoneError}
               className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 py-3.5 text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {loading ? (
