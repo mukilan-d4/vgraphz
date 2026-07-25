@@ -63,8 +63,8 @@ export default function Home() {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
-          <p className="mt-3 text-sm text-slate-600 font-medium">Loading...</p>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          <p className="mt-4 text-slate-600 font-medium">Loading...</p>
         </div>
       </main>
     );
@@ -73,15 +73,15 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50">
 
-      {/* ===== HERO - Mobile First ===== */}
-      <section className="bg-white pt-8 pb-10 md:py-32">
-        <div className="mx-auto max-w-7xl px-4 text-center">
+      {/* ===== HERO - Desktop & Mobile Optimized ===== */}
+      <section className="bg-white py-12 md:py-32">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
 
-          <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-xs font-semibold text-blue-700">
+          <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 md:px-5 md:py-2 text-xs md:text-sm font-semibold text-blue-700">
             India's Creative Platform
           </span>
 
-          <h1 className="mt-4 text-3xl md:text-7xl font-extrabold leading-tight tracking-tight text-slate-900">
+          <h1 className="mt-4 md:mt-8 text-3xl sm:text-5xl md:text-7xl font-extrabold leading-tight tracking-tight text-slate-900">
             Find The Perfect
             <br />
             Photographer &
@@ -89,58 +89,63 @@ export default function Home() {
             Videographer
           </h1>
 
-          <p className="mx-auto mt-3 max-w-3xl text-sm md:text-xl leading-relaxed text-slate-600 px-2">
+          <p className="mx-auto mt-4 md:mt-8 max-w-3xl text-sm sm:text-lg md:text-xl leading-relaxed text-slate-600 px-2">
             Discover verified photographers, videographers, editors and studios near you.
             Contact them directly through WhatsApp or Call.
           </p>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 md:mt-10 flex flex-wrap justify-center gap-3 md:gap-4">
             <Link
               href="/providers"
-              className="rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 md:px-8 py-3.5 md:py-4 text-sm md:text-base font-semibold text-white shadow-sm transition active:scale-95"
+              className="rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 md:px-8 py-3.5 md:py-4 text-sm md:text-base font-semibold text-white shadow-sm transition hover:shadow-lg active:scale-95"
             >
               Browse Professionals
             </Link>
+
             <Link
               href="/register"
-              className="rounded-2xl border border-slate-300 bg-white hover:border-blue-600 hover:text-blue-600 px-6 md:px-8 py-3.5 md:py-4 text-sm md:text-base font-semibold text-slate-700 transition active:scale-95"
+              className="rounded-2xl border border-slate-300 bg-white hover:border-blue-600 hover:text-blue-600 px-6 md:px-8 py-3.5 md:py-4 text-sm md:text-base font-semibold text-slate-700 transition hover:shadow-lg active:scale-95"
             >
-              Join as Creator
+              Join as a Creator
             </Link>
           </div>
 
-          {/* LIVE STATS - Mobile 2x2 Grid */}
-          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm">
-              <h2 className="text-xl md:text-4xl font-bold text-slate-900">{verifiedProviders}</h2>
-              <p className="mt-0.5 text-xs md:text-sm font-medium text-slate-600">Verified</p>
+          {/* LIVE STATS */}
+          <div className="mt-8 md:mt-16 grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-6">
+            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">{verifiedProviders}</h2>
+              <p className="mt-0.5 text-xs sm:text-sm md:text-base font-medium text-slate-600">Verified</p>
             </div>
-            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm">
-              <h2 className="text-xl md:text-4xl font-bold text-slate-900">{citiesCovered}</h2>
-              <p className="mt-0.5 text-xs md:text-sm font-medium text-slate-600">Districts</p>
+
+            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">{citiesCovered}</h2>
+              <p className="mt-0.5 text-xs sm:text-sm md:text-base font-medium text-slate-600">Districts</p>
             </div>
-            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm">
-              <h2 className="text-xl md:text-4xl font-bold text-slate-900">{categoriesCount}</h2>
-              <p className="mt-0.5 text-xs md:text-sm font-medium text-slate-600">Categories</p>
+
+            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">{categoriesCount}</h2>
+              <p className="mt-0.5 text-xs sm:text-sm md:text-base font-medium text-slate-600">Categories</p>
             </div>
-            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm">
-              <h2 className="text-xl md:text-4xl font-bold text-slate-900">100%</h2>
-              <p className="mt-0.5 text-xs md:text-sm font-medium text-slate-600">Free</p>
+
+            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">100%</h2>
+              <p className="mt-0.5 text-xs sm:text-sm md:text-base font-medium text-slate-600">Free</p>
             </div>
           </div>
 
           {/* CREATOR JOIN MESSAGE */}
-          <div className="mt-6 md:mt-16 rounded-2xl md:rounded-3xl bg-blue-50 border border-blue-100 p-4 md:p-8 max-w-4xl mx-auto">
-            <p className="text-sm md:text-lg text-slate-700 leading-relaxed">
+          <div className="mt-8 md:mt-16 rounded-2xl md:rounded-3xl bg-blue-50 border border-blue-100 p-4 md:p-8 max-w-4xl mx-auto">
+            <p className="text-sm sm:text-base md:text-lg text-slate-700 leading-relaxed">
               <strong className="text-slate-900">Get discovered by customers.</strong>
               <br className="hidden sm:block" />
               Create your creator profile once. Showcase your portfolio and let customers contact you directly.
               <span className="font-semibold text-blue-700"> No commission. No middleman.</span>
             </p>
-            <div className="mt-3 md:mt-4">
+
+            <div className="mt-3 md:mt-6">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 md:px-8 py-3 md:py-4 text-sm md:text-base font-semibold text-white shadow-sm transition active:scale-95"
+                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 md:px-8 py-3 md:py-4 text-sm md:text-base font-semibold text-white shadow-sm transition hover:shadow-lg active:scale-95"
               >
                 <span className="text-lg md:text-xl">🚀</span>
                 Get Listed Free
@@ -150,33 +155,33 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== SEARCH - Mobile First ===== */}
-      <section className="bg-white py-6 md:py-14">
-        <div className="mx-auto max-w-7xl px-4">
-          <h2 className="text-center text-xl md:text-4xl font-bold text-slate-900">
+      {/* ===== SEARCH ===== */}
+      <section className="bg-white py-8 md:py-14">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
             Search Professionals
           </h2>
-          <p className="mt-1 md:mt-3 text-center text-sm md:text-base leading-relaxed text-slate-600">
+          <p className="mt-2 md:mt-3 text-center text-sm sm:text-base md:text-lg leading-relaxed text-slate-600">
             Find photographers, videographers, editors and studios by category or location.
           </p>
           <SearchProviders />
         </div>
       </section>
 
-      {/* ===== FEATURED CREATORS - Mobile First ===== */}
-      <section className="bg-slate-50 py-10 md:py-24">
-        <div className="mx-auto max-w-7xl px-4">
+      {/* ===== FEATURED CREATORS ===== */}
+      <section className="bg-slate-50 py-12 md:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl md:text-4xl font-bold text-slate-900">Featured</h2>
-              <p className="mt-0.5 text-sm md:text-base text-slate-600">Trusted professionals</p>
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">Featured</h2>
+              <p className="mt-1 text-sm sm:text-base md:text-lg text-slate-600">Trusted professionals</p>
             </div>
-            <Link href="/providers" className="font-semibold text-blue-600 hover:text-blue-700 text-sm md:text-base">
+            <Link href="/providers" className="font-semibold text-blue-600 hover:text-blue-700 text-sm sm:text-base md:text-lg">
               View All →
             </Link>
           </div>
 
-          <div className="mt-5 md:mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
+          <div className="mt-6 md:mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             {providers?.map((provider) => {
               const onlineLinks = getOnlineLinks(provider);
               const hasLinks = onlineLinks.length > 0;
@@ -187,9 +192,8 @@ export default function Home() {
                   className="group rounded-2xl md:rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl flex flex-col h-full"
                 >
                   <div className="p-4 md:p-7 flex-1 flex flex-col">
-                    {/* Name & Verified */}
                     <div className="flex items-start justify-between">
-                      <h3 className="text-lg md:text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
+                      <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
                         {provider.name}
                       </h3>
                       <span className="rounded-full border border-green-200 bg-green-50 px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-semibold text-green-700 whitespace-nowrap ml-2">
@@ -233,11 +237,10 @@ export default function Home() {
 
                     <div className="flex-1"></div>
 
-                    {/* Action Buttons - Mobile First */}
                     <div className="mt-4 flex gap-2">
                       <a
                         href={`tel:${provider.phone}`}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 active:scale-95"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
                       >
                         <Phone size={15} className="md:size-16" />
                         Call
@@ -246,7 +249,7 @@ export default function Home() {
                         href={`https://wa.me/${provider.whatsapp || provider.phone}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 active:scale-95"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
                       >
                         <MessageCircle size={15} className="md:size-16" />
                         WhatsApp
@@ -267,11 +270,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== WHY CHOOSE - Mobile First ===== */}
-      <section className="bg-white py-10 md:py-24">
-        <div className="mx-auto max-w-7xl px-4">
-          <h2 className="text-center text-xl md:text-5xl font-bold tracking-tight text-slate-900">Why Choose VgraphZ?</h2>
-          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-center text-sm md:text-lg leading-relaxed text-slate-600">
+      {/* ===== WHY CHOOSE ===== */}
+      <section className="bg-white py-12 md:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900">Why Choose VgraphZ?</h2>
+          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-center text-sm sm:text-base md:text-lg leading-relaxed text-slate-600">
             Trusted creators, direct communication and a simple way to connect.
           </p>
 
@@ -297,11 +300,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== HOW IT WORKS - Mobile First ===== */}
-      <section className="bg-slate-50 py-10 md:py-24">
-        <div className="mx-auto max-w-7xl px-4">
-          <h2 className="text-center text-xl md:text-5xl font-bold tracking-tight text-slate-900">How It Works</h2>
-          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-center text-sm md:text-lg leading-relaxed text-slate-600">
+      {/* ===== HOW IT WORKS ===== */}
+      <section className="bg-slate-50 py-12 md:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-center text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900">How It Works</h2>
+          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-center text-sm sm:text-base md:text-lg leading-relaxed text-slate-600">
             Connect with creators in three simple steps.
           </p>
 
@@ -330,24 +333,24 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== CTA - Mobile First ===== */}
-      <section className="bg-blue-600 py-10 md:py-20 text-center text-white">
-        <div className="mx-auto max-w-5xl px-4">
-          <h2 className="text-2xl md:text-5xl font-bold">Get More Clients</h2>
-          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-sm md:text-xl leading-relaxed text-blue-100">
+      {/* ===== CTA ===== */}
+      <section className="bg-blue-600 py-12 md:py-20 text-center text-white">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold">Get More Clients</h2>
+          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-sm sm:text-base md:text-xl leading-relaxed text-blue-100">
             Create your creator profile, showcase your portfolio, and let customers discover your services.
           </p>
 
           <div className="mt-6 md:mt-8 flex flex-wrap justify-center gap-3 md:gap-4">
             <Link
               href="/register"
-              className="rounded-2xl bg-white hover:bg-slate-100 px-6 md:px-10 py-3 md:py-4 text-sm md:text-base font-bold text-blue-600 shadow-sm transition active:scale-95"
+              className="rounded-2xl bg-white hover:bg-slate-100 px-6 md:px-10 py-3 md:py-4 text-sm md:text-base font-bold text-blue-600 shadow-sm transition hover:shadow-lg active:scale-95"
             >
               Join as Creator
             </Link>
             <Link
               href="/providers"
-              className="rounded-2xl border-2 border-white bg-transparent hover:bg-white/10 px-6 md:px-10 py-3 md:py-4 text-sm md:text-base font-bold text-white transition active:scale-95"
+              className="rounded-2xl border-2 border-white bg-transparent hover:bg-white/10 px-6 md:px-10 py-3 md:py-4 text-sm md:text-base font-bold text-white transition hover:shadow-lg active:scale-95"
             >
               Browse Creators
             </Link>
