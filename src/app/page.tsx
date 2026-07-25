@@ -73,7 +73,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50">
 
-      {/* ===== HERO - Desktop & Mobile Optimized ===== */}
+      {/* HERO */}
       <section className="bg-white py-12 md:py-32">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
 
@@ -155,7 +155,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== SEARCH ===== */}
+      {/* SEARCH */}
       <section className="bg-white py-8 md:py-14">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-center text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900">
@@ -168,7 +168,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== FEATURED CREATORS ===== */}
+      {/* FEATURED CREATORS */}
       <section className="bg-slate-50 py-12 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
@@ -237,12 +237,13 @@ export default function Home() {
 
                     <div className="flex-1"></div>
 
+                    {/* Action Buttons - Icons fixed size */}
                     <div className="mt-4 flex gap-2">
                       <a
                         href={`tel:${provider.phone}`}
                         className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
                       >
-                        <Phone size={15} className="md:size-16" />
+                        <Phone size={16} className="shrink-0" />
                         Call
                       </a>
                       <a
@@ -251,7 +252,7 @@ export default function Home() {
                         rel="noopener noreferrer"
                         className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
                       >
-                        <MessageCircle size={15} className="md:size-16" />
+                        <MessageCircle size={16} className="shrink-0" />
                         WhatsApp
                       </a>
                     </div>
@@ -270,7 +271,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== WHY CHOOSE ===== */}
+      {/* WHY CHOOSE */}
       <section className="bg-white py-12 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-center text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900">Why Choose VgraphZ?</h2>
@@ -300,7 +301,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== HOW IT WORKS ===== */}
+      {/* HOW IT WORKS */}
       <section className="bg-slate-50 py-12 md:py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-center text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900">How It Works</h2>
@@ -333,7 +334,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== CTA ===== */}
+      {/* CTA */}
       <section className="bg-blue-600 py-12 md:py-20 text-center text-white">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
           <h2 className="text-2xl sm:text-4xl md:text-5xl font-bold">Get More Clients</h2>
