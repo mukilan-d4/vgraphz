@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, MapPin } from "lucide-react";
 
 // All Tamil Nadu Districts
 const TAMIL_NADU_DISTRICTS = [
@@ -39,12 +39,20 @@ export default function RegisterPage() {
   const [instagram, setInstagram] = useState("");
   const [youtube, setYoutube] = useState("");
   const [portfolio, setPortfolio] = useState("");
+  const [address, setAddress] = useState(""); // ✅ New address field
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
   const [emailValid, setEmailValid] = useState<boolean | null>(null);
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [phoneError, setPhoneError] = useState("");
+
+  // ✅ Generate Google Maps link from address
+  const getGoogleMapsLink = (address: string) => {
+    if (!address.trim()) return null;
+    const encodedAddress = encodeURIComponent(address.trim());
+    return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+  };
 
   // Validate phone number - exactly 10 digits
   const validatePhone = (value: string): { valid: boolean; message: string } => {
@@ -56,7 +64,6 @@ export default function RegisterPage() {
     return { valid: true, message: "✓ Valid phone number" };
   };
 
-  // Handle phone input change
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     const digitsOnly = value.replace(/\D/g, '');
@@ -89,7 +96,6 @@ export default function RegisterPage() {
     return { valid: true, message: "" };
   };
 
-  // Check if email exists
   const checkEmailExists = async (email: string) => {
     if (!email || email.length < 5) return;
     const validation = validateEmailFormat(email);
@@ -121,7 +127,6 @@ export default function RegisterPage() {
     }
   };
 
-  // Handle email input change
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setEmail(value);
@@ -141,7 +146,6 @@ export default function RegisterPage() {
     }
   };
 
-  // Get email validation status
   const getEmailStatus = () => {
     if (!email) return null;
     if (emailValid === true) return { type: "valid", message: "✓ Email is valid and available" };
@@ -223,7 +227,7 @@ export default function RegisterPage() {
       return;
     }
 
-    // ✅ REMOVED: location field - doesn't exist in database
+    // ✅ Insert with address field (optional)
     const { error: profileError } = await supabase
       .from("videographers")
       .insert({
@@ -242,6 +246,7 @@ export default function RegisterPage() {
         instagram: instagram || null,
         youtube: youtube || null,
         portfolio: portfolio || null,
+        address: address || null, // ✅ Added address field
         status: "pending",
         approved: false
       });
@@ -252,10 +257,12 @@ export default function RegisterPage() {
       return;
     }
 
+    // ✅ Redirect regardless of password strength
     router.push("/login?registered=true");
   }
 
   const emailStatus = getEmailStatus();
+  const mapsLink = getGoogleMapsLink(address);
 
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
@@ -390,7 +397,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Phone Number with Validation */}
+            {/* Phone Number */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Phone Number *
@@ -425,9 +432,7 @@ export default function RegisterPage() {
                   </div>
                 )}
               </div>
-              {phoneError && (
-                <p className="mt-1 text-xs text-red-600">{phoneError}</p>
-              )}
+              {phoneError && <p className="mt-1 text-xs text-red-600">{phoneError}</p>}
               {phone.length === 10 && !phoneError && phone.length > 0 && (
                 <p className="mt-1 text-xs text-green-600">✓ Valid phone number</p>
               )}
@@ -486,6 +491,35 @@ export default function RegisterPage() {
                 onChange={(e) => setWhatsapp(e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
               />
+            </div>
+
+            {/* Address with Map Link */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Address (Optional)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Enter your address (optional)"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                />
+                {mapsLink && (
+                  <a
+                    href={mapsLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl transition-all duration-200 whitespace-nowrap"
+                    title="Open in Google Maps"
+                  >
+                    <MapPin size={18} />
+                    <span className="hidden sm:inline text-sm">Map</span>
+                  </a>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-slate-400">Enter your address to show location on map</p>
             </div>
 
             {/* About */}
