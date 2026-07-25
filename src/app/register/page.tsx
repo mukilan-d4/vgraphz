@@ -41,13 +41,156 @@ export default function RegisterPage() {
   const [youtube, setYoutube] = useState("");
   const [portfolio, setPortfolio] = useState("");
   const [error, setError] = useState("");
+  const [emailError, setEmailError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailValid, setEmailValid] = useState<boolean | null>(null);
+  const [checkingEmail, setCheckingEmail] = useState(false);
+
+  // Advanced email validation
+  const validateEmailFormat = (email: string): { valid: boolean; message: string } => {
+    // Remove whitespace
+    const trimmed = email.trim();
+    
+    // Check if empty
+    if (!trimmed) {
+      return { valid: false, message: "Email is required" };
+    }
+
+    // Check for @ symbol
+    if (!trimmed.includes("@")) {
+      return { valid: false, message: "Email must contain @ symbol" };
+    }
+
+    // Check for domain (must have something after @)
+    const parts = trimmed.split("@");
+    if (parts.length !== 2) {
+      return { valid: false, message: "Invalid email format" };
+    }
+
+    const localPart = parts[0];
+    const domainPart = parts[1];
+
+    // Check if local part exists
+    if (!localPart || localPart.length === 0) {
+      return { valid: false, message: "Email must have a username before @" };
+    }
+
+    // Check if domain exists
+    if (!domainPart || domainPart.length === 0) {
+      return { valid: false, message: "Email must have a domain after @" };
+    }
+
+    // Check if domain has a dot (e.g., .com, .in)
+    if (!domainPart.includes(".")) {
+      return { valid: false, message: "Email must have a valid domain (e.g., .com, .in)" };
+    }
+
+    // Check if domain has something after the dot
+    const domainParts = domainPart.split(".");
+    if (domainParts.length < 2) {
+      return { valid: false, message: "Email must have a valid domain extension" };
+    }
+
+    const tld = domainParts[domainParts.length - 1];
+    if (!tld || tld.length < 2) {
+      return { valid: false, message: "Email must have a valid domain extension (e.g., .com, .in)" };
+    }
+
+    // Check for spaces
+    if (trimmed.includes(" ")) {
+      return { valid: false, message: "Email cannot contain spaces" };
+    }
+
+    // Check for invalid special characters
+    const invalidChars = /[!$%^&*()+=|{}:;<>?]/.test(localPart);
+    if (invalidChars) {
+      return { valid: false, message: "Email contains invalid characters" };
+    }
+
+    // Full regex check
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(trimmed)) {
+      return { valid: false, message: "Please enter a valid email address" };
+    }
+
+    return { valid: true, message: "" };
+  };
+
+  // Check if email exists in the system
+  const checkEmailExists = async (email: string) => {
+    if (!email || email.length < 5) return;
+
+    const validation = validateEmailFormat(email);
+    if (!validation.valid) {
+      setEmailValid(false);
+      setEmailError(validation.message);
+      return;
+    }
+
+    setCheckingEmail(true);
+    setEmailError("");
+
+    try {
+      const { data, error } = await supabase
+        .from("videographers")
+        .select("email")
+        .eq("email", email.trim())
+        .maybeSingle();
+
+      if (data) {
+        setEmailValid(false);
+        setEmailError("This email is already registered. Please login.");
+      } else {
+        setEmailValid(true);
+        setEmailError("");
+      }
+    } catch (err) {
+      // If we can't check, assume it's valid
+      setEmailValid(true);
+      setEmailError("");
+    } finally {
+      setCheckingEmail(false);
+    }
+  };
+
+  // Handle email input change
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setEmail(value);
+    
+    // Reset states
+    setEmailError("");
+    setEmailValid(null);
+
+    if (value.length > 0) {
+      // Validate format
+      const validation = validateEmailFormat(value);
+      if (!validation.valid) {
+        setEmailValid(false);
+        setEmailError(validation.message);
+        return;
+      }
+
+      // If format is valid, check if exists (debounced)
+      clearTimeout((window as any).emailTimeout);
+      (window as any).emailTimeout = setTimeout(() => {
+        checkEmailExists(value);
+      }, 500);
+    }
+  };
+
+  // Get email validation status message
+  const getEmailStatus = () => {
+    if (!email) return null;
+    if (emailValid === true) return { type: "valid", message: "✓ Email is valid and available" };
+    if (emailValid === false) return { type: "error", message: emailError || "Invalid email" };
+    if (emailError) return { type: "error", message: emailError };
+    return null;
+  };
 
   function checkStrength(value: string) {
     setPassword(value);
-
     let strength = "Weak";
-
     if (
       value.length >= 8 &&
       /[A-Z]/.test(value) &&
@@ -59,7 +202,6 @@ export default function RegisterPage() {
     } else if (value.length >= 6) {
       strength = "Medium";
     }
-
     setPasswordStrength(strength);
   }
 
@@ -67,6 +209,14 @@ export default function RegisterPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Validate email format before submitting
+    const validation = validateEmailFormat(email);
+    if (!validation.valid) {
+      setError(validation.message);
+      setLoading(false);
+      return;
+    }
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -81,7 +231,7 @@ export default function RegisterPage() {
     }
 
     const { data, error: signupError } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password
     });
 
@@ -108,7 +258,7 @@ export default function RegisterPage() {
       .insert({
         user_id: user.id,
         name,
-        email,
+        email: email.trim(),
         phone,
         category,
         district,
@@ -134,6 +284,8 @@ export default function RegisterPage() {
 
     router.push("/login?registered=true");
   }
+
+  const emailStatus = getEmailStatus();
 
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
@@ -163,19 +315,47 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Email */}
+            {/* Email with Validation */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Email Address *
               </label>
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
-                required
-              />
+              <div className="relative">
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={handleEmailChange}
+                  className={`w-full rounded-2xl border px-4 py-3 pr-12 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-4 transition ${
+                    emailValid === true
+                      ? "border-green-500 focus:border-green-500 focus:ring-green-500/10"
+                      : emailValid === false || emailError
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/10"
+                      : "border-slate-200 focus:border-blue-500 focus:ring-blue-500/10"
+                  }`}
+                  required
+                />
+                {email.length > 0 && (
+                  <div className="absolute inset-y-0 right-0 flex items-center px-3">
+                    {checkingEmail ? (
+                      <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    ) : emailValid === true ? (
+                      <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (emailValid === false || emailError) ? (
+                      <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+              {emailStatus && (
+                <p className={`mt-1 text-xs ${emailStatus.type === "valid" ? "text-green-600" : "text-red-600"}`}>
+                  {emailStatus.message}
+                </p>
+              )}
             </div>
 
             {/* Password */}
@@ -450,7 +630,7 @@ export default function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || emailValid === false}
               className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 py-3.5 text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {loading ? (
