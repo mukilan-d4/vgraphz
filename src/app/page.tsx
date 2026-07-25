@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import SearchProviders from "@/components/SearchProviders";
+import { Phone, MessageCircle } from "lucide-react";
 
 export default async function Home() {
   // Get approved creators/providers
