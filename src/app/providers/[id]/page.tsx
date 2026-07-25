@@ -280,285 +280,251 @@ export default function ProviderDetailPage() {
   return (
     <div className="min-h-screen bg-slate-50">
 
-      {/* HEADER - Clean card style matching featured cards */}
-      <div className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+      {/* PROFILE CARD */}
+      <div className="max-w-4xl mx-auto px-4 pt-8">
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
 
-          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
-
-            {/* Profile Image - Circular like featured cards */}
-            <div className="flex-shrink-0">
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-200 border-4 border-slate-200">
-                {provider.profile_image ? (
-                  <img
-                    src={provider.profile_image}
-                    alt={provider.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-slate-500">
-                    {provider.name?.charAt(0)}
-                  </div>
-                )}
-              </div>
+          {/* Profile Header */}
+          <div className="flex flex-col items-center pt-8 px-6">
+            <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-200 border-4 border-slate-200">
+              {provider.profile_image ? (
+                <img
+                  src={provider.profile_image}
+                  alt={provider.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-slate-500">
+                  {provider.name?.charAt(0)}
+                </div>
+              )}
             </div>
 
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2 flex-wrap">
-                <h1 className="text-3xl font-bold text-slate-900">
-                  {provider.name}
-                </h1>
-                <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                  <CheckCircle size={14} className="text-green-600" />
-                  Verified
-                </span>
-              </div>
-
-              <p className="text-blue-600 font-semibold text-lg mt-1">
-                {provider.category}
-              </p>
-
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2 text-sm text-slate-600">
-                <span className="flex items-center gap-1">
-                  <MapPin size={16} />
-                  {provider.district}
-                </span>
-                <span>•</span>
-                <span>{reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}</span>
-                {provider.experience && (
-                  <>
-                    <span>•</span>
-                    <span>⭐ {provider.experience} Years</span>
-                  </>
-                )}
-              </div>
+            <div className="mt-4 flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-slate-900">
+                {provider.name}
+              </h1>
+              <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                <CheckCircle size={14} className="text-green-600" />
+                Verified
+              </span>
             </div>
 
-            {/* Action Buttons - Clean style */}
-            <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <p className="text-blue-600 font-semibold text-lg mt-1">
+              {provider.category}
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-3 mt-2 text-sm text-slate-600">
+              <span className="flex items-center gap-1">
+                <MapPin size={16} />
+                {provider.district}
+              </span>
+              <span>•</span>
+              <span>{reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}</span>
+              {provider.experience && (
+                <>
+                  <span>•</span>
+                  <span>⭐ {provider.experience} Years</span>
+                </>
+              )}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="mt-6 flex flex-wrap justify-center gap-3 w-full">
               <button
                 onClick={handleCall}
-                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
+                className="flex-1 min-w-[100px] flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
               >
                 <Phone size={18} />
                 Call Now
               </button>
               <button
                 onClick={handleWhatsApp}
-                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
+                className="flex-1 min-w-[100px] flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
               >
                 <MessageCircle size={18} />
                 WhatsApp
               </button>
               <button
                 onClick={() => setShowEnquiryForm(!showEnquiryForm)}
-                className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
+                className="flex-1 min-w-[100px] flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
               >
                 <Send size={18} />
                 Enquiry
               </button>
             </div>
-          </div>
 
-          {/* Enquiry Form */}
-          {showEnquiryForm && (
-            <form
-              onSubmit={handleEnquirySubmit}
-              className="mt-6 bg-slate-50 p-5 rounded-2xl border border-slate-200 max-w-2xl mx-auto md:mx-0"
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  placeholder="Your Name *"
-                  value={enquiryName}
-                  onChange={(e) => setEnquiryName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+            {/* Enquiry Form - Button centered below textarea */}
+            {showEnquiryForm && (
+              <form
+                onSubmit={handleEnquirySubmit}
+                className="mt-4 w-full bg-slate-50 p-4 rounded-2xl border border-slate-200"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <input
+                    placeholder="Your Name *"
+                    value={enquiryName}
+                    onChange={(e) => setEnquiryName(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                  />
+                  <input
+                    placeholder="Phone Number *"
+                    value={enquiryPhone}
+                    onChange={(e) => setEnquiryPhone(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                  />
+                  <input
+                    placeholder="Event Type"
+                    value={enquiryEvent}
+                    onChange={(e) => setEnquiryEvent(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                  />
+                </div>
+
+                <textarea
+                  placeholder="Your Requirements *"
+                  value={enquiryRequirements}
+                  onChange={(e) => setEnquiryRequirements(e.target.value)}
+                  className="w-full mt-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 resize-none"
+                  rows={2}
                 />
-                <input
-                  placeholder="Phone Number *"
-                  value={enquiryPhone}
-                  onChange={(e) => setEnquiryPhone(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                />
-                <input
-                  placeholder="Event Type"
-                  value={enquiryEvent}
-                  onChange={(e) => setEnquiryEvent(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                />
-                <button
-                  type="submit"
-                  disabled={enquirySubmitting}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition-all duration-200 hover:shadow-md"
-                >
-                  {enquirySubmitting ? "Sending..." : "Send Enquiry"}
-                </button>
-              </div>
-              <textarea
-                placeholder="Your Requirements *"
-                value={enquiryRequirements}
-                onChange={(e) => setEnquiryRequirements(e.target.value)}
-                className="w-full mt-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 resize-none"
-                rows={2}
-              />
-              {enquiryError && (
-                <p className="text-red-600 text-sm mt-2">{enquiryError}</p>
-              )}
-              {enquirySuccess && (
-                <p className="text-green-600 text-sm mt-2">{enquirySuccess}</p>
-              )}
-            </form>
-          )}
-        </div>
-      </div>
 
-      {/* MAIN CONTENT - Grid layout with clean cards */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Button centered below textarea */}
+                <div className="flex justify-center mt-3">
+                  <button
+                    type="submit"
+                    disabled={enquirySubmitting}
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-2.5 rounded-xl transition-all duration-200 hover:shadow-md"
+                  >
+                    {enquirySubmitting ? "Sending..." : "Send Enquiry"}
+                  </button>
+                </div>
 
-          {/* About */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-bold text-slate-900 mb-3">About</h2>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              {provider.about || "No description provided."}
-            </p>
-          </div>
-
-          {/* Location */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-3">
-              <MapPin size={18} className="text-blue-600" />
-              Location
-            </h2>
-            <p className="text-slate-600 text-sm">
-              {provider.location || provider.district || "Not specified"}
-            </p>
-            {provider.state && (
-              <p className="text-slate-500 text-sm mt-1">State: {provider.state}</p>
+                {enquiryError && (
+                  <p className="text-red-600 text-sm mt-2 text-center">{enquiryError}</p>
+                )}
+                {enquirySuccess && (
+                  <p className="text-green-600 text-sm mt-2 text-center">{enquirySuccess}</p>
+                )}
+              </form>
             )}
           </div>
 
-          {/* Skills */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-bold text-slate-900 mb-3">Skills & Expertise</h2>
-            <div className="flex flex-wrap gap-2">
-              {skills.length ? (
-                skills.map((skill: string, i: number) => (
-                  <span
-                    key={i}
-                    className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
-                  >
-                    {skill}
-                  </span>
-                ))
-              ) : (
-                <p className="text-slate-500 text-sm">No skills listed</p>
+          {/* Details Grid */}
+          <div className="px-6 pb-6 mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="bg-slate-50 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-700 mb-1">About</h2>
+                <p className="text-slate-600 text-sm leading-relaxed">
+                  {provider.about || "No description provided."}
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                  <MapPin size={16} className="text-blue-600" /> Location
+                </h2>
+                <p className="text-slate-600 text-sm">
+                  {provider.location || provider.district || "Not specified"}
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-700 mb-2">Skills</h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {skills.length ? (
+                    skills.map((skill: string, i: number) => (
+                      <span
+                        key={i}
+                        className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium"
+                      >
+                        {skill}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-slate-500 text-sm">No skills listed</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                  <Award size={16} className="text-amber-500" /> Experience
+                </h2>
+                <p className="text-slate-600 text-sm">
+                  {provider.experience || "0"} Years
+                </p>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
+                  <Languages size={16} className="text-emerald-500" /> Languages
+                </h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {languages.length ? (
+                    languages.map((lang: string, i: number) => (
+                      <span
+                        key={i}
+                        className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-medium"
+                      >
+                        {lang}
+                      </span>
+                    ))
+                  ) : (
+                    <p className="text-slate-500 text-sm">No languages listed</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-slate-50 rounded-2xl p-4">
+                <h2 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
+                  <Globe size={16} className="text-blue-600" /> Online
+                </h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {provider.website && (
+                    <a href={provider.website} target="_blank" rel="noopener noreferrer" className="bg-white px-2.5 py-1 rounded-full text-xs font-medium text-blue-600 hover:bg-blue-50 transition border border-slate-200">
+                      Website
+                    </a>
+                  )}
+                  {provider.youtube && (
+                    <a href={provider.youtube} target="_blank" rel="noopener noreferrer" className="bg-white px-2.5 py-1 rounded-full text-xs font-medium text-red-600 hover:bg-red-50 transition border border-slate-200">
+                      YouTube
+                    </a>
+                  )}
+                  {provider.instagram && (
+                    <a href={provider.instagram} target="_blank" rel="noopener noreferrer" className="bg-white px-2.5 py-1 rounded-full text-xs font-medium text-pink-600 hover:bg-pink-50 transition border border-slate-200">
+                      Instagram
+                    </a>
+                  )}
+                  {provider.portfolio && (
+                    <a href={provider.portfolio} target="_blank" rel="noopener noreferrer" className="bg-white px-2.5 py-1 rounded-full text-xs font-medium text-purple-600 hover:bg-purple-50 transition border border-slate-200">
+                      Portfolio
+                    </a>
+                  )}
+                  {!provider.website && !provider.youtube && !provider.instagram && !provider.portfolio && (
+                    <p className="text-slate-500 text-sm">No links</p>
+                  )}
+                </div>
+              </div>
+
+              {(provider.delivery || provider.delivery_time) && (
+                <div className="bg-slate-50 rounded-2xl p-4">
+                  <h2 className="text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                    <Truck size={16} className="text-blue-600" /> Delivery
+                  </h2>
+                  <p className="text-slate-600 text-sm">
+                    {provider.delivery || provider.delivery_time}
+                  </p>
+                </div>
               )}
+
             </div>
           </div>
-
-          {/* Experience */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-3">
-              <Award size={18} className="text-amber-500" />
-              Experience
-            </h2>
-            <p className="text-slate-600 text-sm">
-              {provider.experience || "0"} Years
-            </p>
-          </div>
-
-          {/* Languages */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-3">
-              <Languages size={18} className="text-emerald-500" />
-              Languages
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {languages.length ? (
-                languages.map((lang: string, i: number) => (
-                  <span
-                    key={i}
-                    className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-sm font-medium"
-                  >
-                    {lang}
-                  </span>
-                ))
-              ) : (
-                <p className="text-slate-500 text-sm">No languages listed</p>
-              )}
-            </div>
-          </div>
-
-          {/* Online Presence */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-3">
-              <Globe size={18} className="text-blue-600" />
-              Online Presence
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {provider.website && (
-                <a
-                  href={provider.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl text-sm font-medium transition"
-                >
-                  Website
-                </a>
-              )}
-              {provider.youtube && (
-                <a
-                  href={provider.youtube}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 rounded-xl text-sm font-medium transition"
-                >
-                  YouTube
-                </a>
-              )}
-              {provider.instagram && (
-                <a
-                  href={provider.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-pink-50 hover:bg-pink-100 text-pink-600 px-3 py-1.5 rounded-xl text-sm font-medium transition"
-                >
-                  Instagram
-                </a>
-              )}
-              {provider.portfolio && (
-                <a
-                  href={provider.portfolio}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-purple-50 hover:bg-purple-100 text-purple-600 px-3 py-1.5 rounded-xl text-sm font-medium transition"
-                >
-                  Portfolio
-                </a>
-              )}
-              {!provider.website && !provider.youtube && !provider.instagram && !provider.portfolio && (
-                <p className="text-slate-500 text-sm">No online presence listed</p>
-              )}
-            </div>
-          </div>
-
-          {/* Delivery */}
-          {(provider.delivery || provider.delivery_time) && (
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
-              <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2 mb-3">
-                <Truck size={18} className="text-blue-600" />
-                Delivery
-              </h2>
-              <p className="text-slate-600 text-sm">
-                {provider.delivery || provider.delivery_time}
-              </p>
-            </div>
-          )}
-
         </div>
 
         {/* REVIEWS SECTION */}
-        <div className="mt-8 bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+        <div className="mt-6 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           <h2 className="text-xl font-bold text-slate-900">
             Reviews ({reviewCount})
           </h2>
