@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Eye, EyeOff, Upload, X, Move, ZoomIn, ZoomOut } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 
 // All Tamil Nadu Districts
 const TAMIL_NADU_DISTRICTS = [
@@ -40,24 +40,14 @@ export default function RegisterPage() {
   const [instagram, setInstagram] = useState("");
   const [youtube, setYoutube] = useState("");
   const [portfolio, setPortfolio] = useState("");
-  const [profileImage, setProfileImage] = useState<File | null>(null);
-  const [profileImagePreview, setProfileImagePreview] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Image crop/move state
-  const [showImageEditor, setShowImageEditor] = useState(false);
-  const [imagePosition, setImagePosition] = useState({ x: 50, y: 50 });
-  const [imageScale, setImageScale] = useState(100);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [imageUrl, setImageUrl] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageContainerRef = useRef<HTMLDivElement>(null);
-
   function checkStrength(value: string) {
     setPassword(value);
+
     let strength = "Weak";
+
     if (
       value.length >= 8 &&
       /[A-Z]/.test(value) &&
@@ -69,118 +59,8 @@ export default function RegisterPage() {
     } else if (value.length >= 6) {
       strength = "Medium";
     }
+
     setPasswordStrength(strength);
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image size must be less than 5MB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        // Check if image is square (1:1 ratio) or at least close
-        const ratio = img.width / img.height;
-        if (ratio < 0.8 || ratio > 1.2) {
-          setError("Please upload a square image (1:1 ratio)");
-          return;
-        }
-        setImageUrl(event.target?.result as string);
-        setShowImageEditor(true);
-        setImagePosition({ x: 50, y: 50 });
-        setImageScale(100);
-        setProfileImage(file);
-      };
-      img.src = event.target?.result as string;
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleImageEditorMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleImageEditorMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    const deltaX = e.clientX - dragStart.x;
-    const deltaY = e.clientY - dragStart.y;
-    setImagePosition(prev => ({
-      x: Math.max(0, Math.min(100, prev.x + (deltaX / 4))),
-      y: Math.max(0, Math.min(100, prev.y + (deltaY / 4)))
-    }));
-    setDragStart({ x: e.clientX, y: e.clientY });
-  };
-
-  const handleImageEditorMouseUp = () => {
-    setIsDragging(false);
-  };
-
-  const handleZoomIn = () => {
-    setImageScale(prev => Math.min(200, prev + 10));
-  };
-
-  const handleZoomOut = () => {
-    setImageScale(prev => Math.max(50, prev - 10));
-  };
-
-  const handleCropConfirm = () => {
-    // Create a canvas to crop the image
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const img = new Image();
-    img.src = imageUrl;
-    img.onload = () => {
-      const size = Math.min(img.width, img.height);
-      const x = (img.width - size) * (imagePosition.x / 100);
-      const y = (img.height - size) * (imagePosition.y / 100);
-      const scaleFactor = imageScale / 100;
-      const cropSize = size / scaleFactor;
-      const cropX = x + (size - cropSize) / 2;
-      const cropY = y + (size - cropSize) / 2;
-
-      canvas.width = 200;
-      canvas.height = 200;
-      ctx?.drawImage(img, cropX, cropY, cropSize, cropSize, 0, 0, 200, 200);
-      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-      setProfileImagePreview(croppedDataUrl);
-      
-      // Convert data URL to File
-      fetch(croppedDataUrl)
-        .then(res => res.blob())
-        .then(blob => {
-          const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
-          setProfileImage(file);
-          setShowImageEditor(false);
-        });
-    };
-  };
-
-  async function uploadProfileImage() {
-    if (!profileImage) return "";
-    
-    const fileName = `${Date.now()}-${Math.random()}-${profileImage.name}`;
-    const { error } = await supabase.storage
-      .from("profile-images")
-      .upload(fileName, profileImage);
-    
-    if (error) {
-      console.log("Upload error:", error);
-      return "";
-    }
-    
-    const { data } = supabase.storage
-      .from("profile-images")
-      .getPublicUrl(fileName);
-    
-    return data.publicUrl;
   }
 
   async function register(e: React.FormEvent) {
@@ -223,12 +103,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Upload profile image if exists
-    let profileImageUrl = "";
-    if (profileImage) {
-      profileImageUrl = await uploadProfileImage();
-    }
-
     const { error: profileError } = await supabase
       .from("videographers")
       .insert({
@@ -248,7 +122,6 @@ export default function RegisterPage() {
         instagram: instagram || null,
         youtube: youtube || null,
         portfolio: portfolio || null,
-        profile_image: profileImageUrl || null,
         status: "pending",
         approved: false
       });
@@ -266,137 +139,16 @@ export default function RegisterPage() {
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg">
         
+        {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-slate-900">VgraphZ</h1>
           <p className="text-slate-600 mt-1">Create your provider account</p>
         </div>
 
+        {/* Register Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
           <form onSubmit={register} className="space-y-4">
-            
-            {/* Profile Photo Upload */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Profile Photo (Square image recommended)
-              </label>
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-full rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-slate-600 hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
-                  >
-                    <Upload className="w-6 h-6 mx-auto mb-2 text-slate-400" />
-                    <span className="text-sm">Click to upload profile photo</span>
-                    <p className="text-xs text-slate-400 mt-1">Max 5MB, square image</p>
-                  </button>
-                </div>
-                {profileImagePreview && (
-                  <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-slate-200 flex-shrink-0">
-                    <img
-                      src={profileImagePreview}
-                      alt="Profile preview"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Image Editor Modal */}
-            {showImageEditor && (
-              <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-3xl max-w-md w-full p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-slate-900">Edit Photo</h3>
-                    <button
-                      type="button"
-                      onClick={() => setShowImageEditor(false)}
-                      className="text-slate-400 hover:text-slate-600"
-                    >
-                      <X size={24} />
-                    </button>
-                  </div>
-
-                  <div
-                    ref={imageContainerRef}
-                    className="relative w-full aspect-square rounded-2xl overflow-hidden bg-slate-200 cursor-move"
-                    onMouseDown={handleImageEditorMouseDown}
-                    onMouseMove={handleImageEditorMouseMove}
-                    onMouseUp={handleImageEditorMouseUp}
-                    onMouseLeave={handleImageEditorMouseUp}
-                  >
-                    <div
-                      className="absolute w-full h-full transition-transform duration-100"
-                      style={{
-                        transform: `scale(${imageScale / 100}) translate(${(imagePosition.x - 50) * 2}%, ${(imagePosition.y - 50) * 2}%)`,
-                        transformOrigin: 'center',
-                      }}
-                    >
-                      <img
-                        src={imageUrl}
-                        alt="Edit"
-                        className="w-full h-full object-cover"
-                        draggable={false}
-                      />
-                    </div>
-                    <div className="absolute inset-0 border-2 border-white rounded-2xl pointer-events-none" />
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-full h-full border-2 border-white/50 rounded-2xl" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between mt-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={handleZoomOut}
-                        className="p-2 rounded-xl hover:bg-slate-100 transition"
-                      >
-                        <ZoomOut size={20} />
-                      </button>
-                      <span className="text-sm text-slate-600">{Math.round(imageScale)}%</span>
-                      <button
-                        type="button"
-                        onClick={handleZoomIn}
-                        className="p-2 rounded-xl hover:bg-slate-100 transition"
-                      >
-                        <ZoomIn size={20} />
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Move size={16} />
-                      <span>Drag to adjust position</span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 mt-4">
-                    <button
-                      type="button"
-                      onClick={() => setShowImageEditor(false)}
-                      className="flex-1 rounded-xl border border-slate-200 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleCropConfirm}
-                      className="flex-1 rounded-xl bg-blue-600 py-2.5 font-semibold text-white hover:bg-blue-700 transition"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
+            {/* Full Name */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Full Name *
@@ -411,6 +163,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Email */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Email Address *
@@ -425,6 +178,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Password */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Password *
@@ -457,6 +211,7 @@ export default function RegisterPage() {
               <p className="mt-1 text-xs text-slate-500">Minimum 8 characters</p>
             </div>
 
+            {/* Confirm Password */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Confirm Password *
@@ -485,6 +240,7 @@ export default function RegisterPage() {
               )}
             </div>
 
+            {/* Phone */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Phone Number *
@@ -499,6 +255,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Category */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Category *
@@ -518,6 +275,7 @@ export default function RegisterPage() {
               </select>
             </div>
 
+            {/* District */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 District *
@@ -537,6 +295,7 @@ export default function RegisterPage() {
 
             <hr className="border-slate-200" />
 
+            {/* WhatsApp */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 WhatsApp Number
@@ -550,6 +309,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* About */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 About
@@ -563,6 +323,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Location */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Location
@@ -576,6 +337,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Skills */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Skills
@@ -590,6 +352,7 @@ export default function RegisterPage() {
               <p className="text-xs text-slate-400 mt-1">Separate skills with commas</p>
             </div>
 
+            {/* Experience */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Experience (Years)
@@ -604,6 +367,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Languages */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Languages
@@ -619,8 +383,10 @@ export default function RegisterPage() {
 
             <hr className="border-slate-200" />
 
+            {/* Online Presence */}
             <h3 className="text-lg font-bold text-slate-900">Online Presence</h3>
 
+            {/* Website */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Website Link
@@ -634,6 +400,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Instagram */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Instagram Link
@@ -647,6 +414,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* YouTube */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 YouTube Link
@@ -660,6 +428,7 @@ export default function RegisterPage() {
               />
             </div>
 
+            {/* Portfolio */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Portfolio Link
