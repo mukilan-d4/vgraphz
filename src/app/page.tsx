@@ -7,17 +7,14 @@ import { Phone, MessageCircle, Globe, FolderOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
-  // Get approved creators/providers
   const [providers, setProviders] = useState<any[]>([]);
   const [verifiedProviders, setVerifiedProviders] = useState(0);
   const [citiesCovered, setCitiesCovered] = useState(0);
   const [categoriesCount, setCategoriesCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Load data
   useEffect(() => {
     async function loadData() {
-      // Get approved creators/providers
       const { data: providersData } = await supabase
         .from("videographers")
         .select("*")
@@ -27,7 +24,6 @@ export default function Home() {
 
       setProviders(providersData || []);
 
-      // Get live statistics
       const { data: allApproved } = await supabase
         .from("videographers")
         .select("district, category")
@@ -36,14 +32,12 @@ export default function Home() {
 
       setVerifiedProviders(allApproved?.length || 0);
 
-      // Count districts
       const cities = new Set();
       allApproved?.forEach((p) => {
         if (p.district) cities.add(p.district);
       });
       setCitiesCovered(cities.size || 0);
 
-      // Count categories
       const categories = new Set();
       allApproved?.forEach((p) => {
         if (p.category) categories.add(p.category);
@@ -56,12 +50,6 @@ export default function Home() {
     loadData();
   }, []);
 
-  // Helper to check if provider has any online presence
-  const hasOnlinePresence = (provider: any) => {
-    return provider.website || provider.instagram || provider.youtube || provider.portfolio;
-  };
-
-  // Get online presence links
   const getOnlineLinks = (provider: any) => {
     const links = [];
     if (provider.website) links.push({ type: "website", url: provider.website, label: "Website", emoji: "🌐" });
@@ -75,8 +63,8 @@ export default function Home() {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-          <p className="mt-4 text-slate-600 font-medium">Loading...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-4 border-blue-600 border-t-transparent"></div>
+          <p className="mt-3 text-sm text-slate-600 font-medium">Loading...</p>
         </div>
       </main>
     );
@@ -85,15 +73,15 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-50">
 
-      {/* HERO */}
-      <section className="bg-white py-24 md:py-32">
-        <div className="mx-auto max-w-7xl px-6 text-center">
+      {/* ===== HERO - Mobile First ===== */}
+      <section className="bg-white pt-8 pb-10 md:py-32">
+        <div className="mx-auto max-w-7xl px-4 text-center">
 
-          <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-semibold text-blue-700">
-            India's Creative Lead Generation Platform
+          <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1.5 text-xs font-semibold text-blue-700">
+            India's Creative Platform
           </span>
 
-          <h1 className="mt-8 text-5xl font-extrabold leading-tight tracking-tight text-slate-900 md:text-7xl">
+          <h1 className="mt-4 text-3xl md:text-7xl font-extrabold leading-tight tracking-tight text-slate-900">
             Find The Perfect
             <br />
             Photographer &
@@ -101,70 +89,60 @@ export default function Home() {
             Videographer
           </h1>
 
-          <p className="mx-auto mt-8 max-w-3xl text-xl leading-8 text-slate-600">
-            Discover verified photographers, videographers, drone pilots,
-            editors and studios near you.
-            <br />
+          <p className="mx-auto mt-3 max-w-3xl text-sm md:text-xl leading-relaxed text-slate-600 px-2">
+            Discover verified photographers, videographers, editors and studios near you.
             Contact them directly through WhatsApp or Call.
           </p>
 
-          <div className="mt-10 flex flex-wrap justify-center gap-4">
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
             <Link
               href="/providers"
-              className="rounded-2xl bg-blue-600 px-8 py-4 font-semibold text-white shadow-sm transition hover:bg-blue-700"
+              className="rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 md:px-8 py-3.5 md:py-4 text-sm md:text-base font-semibold text-white shadow-sm transition active:scale-95"
             >
               Browse Professionals
             </Link>
-
             <Link
               href="/register"
-              className="rounded-2xl border border-slate-300 bg-white px-8 py-4 font-semibold text-slate-700 transition hover:border-blue-600 hover:text-blue-600"
+              className="rounded-2xl border border-slate-300 bg-white hover:border-blue-600 hover:text-blue-600 px-6 md:px-8 py-3.5 md:py-4 text-sm md:text-base font-semibold text-slate-700 transition active:scale-95"
             >
-              Join as a Creator
+              Join as Creator
             </Link>
           </div>
 
-          {/* LIVE STATS */}
-          <div className="mt-16 grid gap-6 sm:grid-cols-2 md:grid-cols-4">
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-4xl font-bold text-slate-900">{verifiedProviders}</h2>
-              <p className="mt-2 text-sm font-medium text-slate-600">Verified Creators</p>
+          {/* LIVE STATS - Mobile 2x2 Grid */}
+          <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm">
+              <h2 className="text-xl md:text-4xl font-bold text-slate-900">{verifiedProviders}</h2>
+              <p className="mt-0.5 text-xs md:text-sm font-medium text-slate-600">Verified</p>
             </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-4xl font-bold text-slate-900">{citiesCovered}</h2>
-              <p className="mt-2 text-sm font-medium text-slate-600">Districts Covered</p>
+            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm">
+              <h2 className="text-xl md:text-4xl font-bold text-slate-900">{citiesCovered}</h2>
+              <p className="mt-0.5 text-xs md:text-sm font-medium text-slate-600">Districts</p>
             </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-4xl font-bold text-slate-900">{categoriesCount}</h2>
-              <p className="mt-2 text-sm font-medium text-slate-600">Creative Categories</p>
+            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm">
+              <h2 className="text-xl md:text-4xl font-bold text-slate-900">{categoriesCount}</h2>
+              <p className="mt-0.5 text-xs md:text-sm font-medium text-slate-600">Categories</p>
             </div>
-
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-              <h2 className="text-4xl font-bold text-slate-900">100%</h2>
-              <p className="mt-2 text-sm font-medium text-slate-600">Free Enquiries</p>
+            <div className="rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-3 md:p-6 shadow-sm">
+              <h2 className="text-xl md:text-4xl font-bold text-slate-900">100%</h2>
+              <p className="mt-0.5 text-xs md:text-sm font-medium text-slate-600">Free</p>
             </div>
           </div>
 
           {/* CREATOR JOIN MESSAGE */}
-          <div className="mt-16 rounded-3xl bg-blue-50 border border-blue-100 p-8 max-w-4xl mx-auto">
-            <p className="text-lg text-slate-700 leading-relaxed">
-              <strong className="text-slate-900">
-                Get discovered by customers looking for creative professionals.
-              </strong>
-              <br />
-              Create your creator profile once. Showcase your portfolio and let customers searching for photographers,
-              videographers, editors and drone pilots contact you directly through WhatsApp or Call.
+          <div className="mt-6 md:mt-16 rounded-2xl md:rounded-3xl bg-blue-50 border border-blue-100 p-4 md:p-8 max-w-4xl mx-auto">
+            <p className="text-sm md:text-lg text-slate-700 leading-relaxed">
+              <strong className="text-slate-900">Get discovered by customers.</strong>
+              <br className="hidden sm:block" />
+              Create your creator profile once. Showcase your portfolio and let customers contact you directly.
               <span className="font-semibold text-blue-700"> No commission. No middleman.</span>
             </p>
-
-            <div className="mt-6">
+            <div className="mt-3 md:mt-4">
               <Link
                 href="/register"
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-8 py-4 font-semibold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-lg"
+                className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 md:px-8 py-3 md:py-4 text-sm md:text-base font-semibold text-white shadow-sm transition active:scale-95"
               >
-                <span className="text-xl">🚀</span>
+                <span className="text-lg md:text-xl">🚀</span>
                 Get Listed Free
               </Link>
             </div>
@@ -172,33 +150,33 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SEARCH */}
-      <section className="bg-white py-14">
-        <div className="mx-auto max-w-7xl px-6">
-          <h2 className="text-center text-4xl font-bold text-slate-900">
-            Search Creative Professionals
+      {/* ===== SEARCH - Mobile First ===== */}
+      <section className="bg-white py-6 md:py-14">
+        <div className="mx-auto max-w-7xl px-4">
+          <h2 className="text-center text-xl md:text-4xl font-bold text-slate-900">
+            Search Professionals
           </h2>
-          <p className="mt-3 text-center leading-7 text-slate-600">
+          <p className="mt-1 md:mt-3 text-center text-sm md:text-base leading-relaxed text-slate-600">
             Find photographers, videographers, editors and studios by category or location.
           </p>
           <SearchProviders />
         </div>
       </section>
 
-      {/* FEATURED CREATORS */}
-      <section className="bg-slate-50 py-24">
-        <div className="mx-auto max-w-7xl px-6">
+      {/* ===== FEATURED CREATORS - Mobile First ===== */}
+      <section className="bg-slate-50 py-10 md:py-24">
+        <div className="mx-auto max-w-7xl px-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-4xl font-bold text-slate-900">Featured Creators</h2>
-              <p className="mt-2 leading-7 text-slate-600">Trusted creative professionals from VgraphZ</p>
+              <h2 className="text-xl md:text-4xl font-bold text-slate-900">Featured</h2>
+              <p className="mt-0.5 text-sm md:text-base text-slate-600">Trusted professionals</p>
             </div>
-            <Link href="/providers" className="font-semibold text-blue-600 hover:text-blue-700">
+            <Link href="/providers" className="font-semibold text-blue-600 hover:text-blue-700 text-sm md:text-base">
               View All →
             </Link>
           </div>
 
-          <div className="mt-10 grid gap-8 md:grid-cols-3">
+          <div className="mt-5 md:mt-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8">
             {providers?.map((provider) => {
               const onlineLinks = getOnlineLinks(provider);
               const hasLinks = onlineLinks.length > 0;
@@ -206,42 +184,36 @@ export default function Home() {
               return (
                 <div
                   key={provider.id}
-                  className="group rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl flex flex-col h-full"
+                  className="group rounded-2xl md:rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl flex flex-col h-full"
                 >
-                  <div className="p-7 flex-1 flex flex-col">
-                    {/* Name and Verified Badge */}
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
+                  <div className="p-4 md:p-7 flex-1 flex flex-col">
+                    {/* Name & Verified */}
+                    <div className="flex items-start justify-between">
+                      <h3 className="text-lg md:text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
                         {provider.name}
                       </h3>
-                      <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                      <span className="rounded-full border border-green-200 bg-green-50 px-2 md:px-3 py-0.5 md:py-1 text-[10px] md:text-xs font-semibold text-green-700 whitespace-nowrap ml-2">
                         ✔ Verified
                       </span>
                     </div>
 
-                    {/* Category */}
-                    <p className="mt-4 font-semibold text-blue-600">{provider.category}</p>
-
-                    {/* Location */}
-                    <p className="mt-2 leading-7 text-slate-600">📍 {provider.district}</p>
-
-                    {/* Experience */}
+                    <p className="mt-2 text-sm md:text-base font-semibold text-blue-600">{provider.category}</p>
+                    <p className="mt-1 text-sm md:text-base text-slate-600">📍 {provider.district}</p>
                     {provider.experience && (
-                      <p className="mt-2 leading-7 text-slate-600">⭐ {provider.experience} Years Experience</p>
+                      <p className="mt-1 text-sm md:text-base text-slate-600">⭐ {provider.experience}Y</p>
                     )}
 
-                    {/* Online Presence Links */}
                     {hasLinks && (
-                      <div className="mt-4">
-                        <p className="text-xs font-semibold text-slate-500 mb-2">🔗 Online Presence</p>
-                        <div className="flex flex-wrap gap-2">
+                      <div className="mt-3">
+                        <p className="text-[10px] md:text-xs font-semibold text-slate-500">🔗 Online</p>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
                           {onlineLinks.map((link, index) => (
                             <a
                               key={index}
                               href={link.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 hover:scale-105 ${
+                              className={`inline-flex items-center gap-1 px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-medium transition-all duration-200 active:scale-95 ${
                                 link.type === "website"
                                   ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
                                   : link.type === "instagram"
@@ -259,33 +231,31 @@ export default function Home() {
                       </div>
                     )}
 
-                    {/* Spacer to push buttons to bottom */}
                     <div className="flex-1"></div>
 
-                    {/* ACTION BUTTONS */}
+                    {/* Action Buttons - Mobile First */}
                     <div className="mt-4 flex gap-2">
                       <a
                         href={`tel:${provider.phone}`}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 active:scale-95"
                       >
-                        <Phone size={16} />
+                        <Phone size={15} className="md:size-16" />
                         Call
                       </a>
                       <a
                         href={`https://wa.me/${provider.whatsapp || provider.phone}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 active:scale-95"
                       >
-                        <MessageCircle size={16} />
+                        <MessageCircle size={15} className="md:size-16" />
                         WhatsApp
                       </a>
                     </div>
 
-                    {/* View Profile Button */}
                     <Link
                       href={`/providers/${provider.id}`}
-                      className="mt-3 block w-full rounded-2xl bg-purple-600 hover:bg-blue-600 py-2.5 text-center font-semibold text-white transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                      className="mt-2 block w-full rounded-xl md:rounded-2xl bg-purple-600 hover:bg-blue-600 py-2.5 md:py-3 text-center text-xs md:text-sm font-semibold text-white transition-all duration-300 hover:shadow-md active:scale-95"
                     >
                       View Profile
                     </Link>
@@ -297,94 +267,87 @@ export default function Home() {
         </div>
       </section>
 
-      {/* WHY CHOOSE VGRAPHZ */}
-      <section className="bg-white py-24">
-        <div className="mx-auto max-w-7xl px-6">
-          <h2 className="text-center text-5xl font-bold tracking-tight text-slate-900">Why Choose VgraphZ?</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-center text-lg leading-7 text-slate-600">
+      {/* ===== WHY CHOOSE - Mobile First ===== */}
+      <section className="bg-white py-10 md:py-24">
+        <div className="mx-auto max-w-7xl px-4">
+          <h2 className="text-center text-xl md:text-5xl font-bold tracking-tight text-slate-900">Why Choose VgraphZ?</h2>
+          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-center text-sm md:text-lg leading-relaxed text-slate-600">
             Trusted creators, direct communication and a simple way to connect.
           </p>
 
-          <div className="mt-14 grid gap-8 md:grid-cols-3">
-            <div className="group rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
-              <div className="text-5xl transition duration-300 group-hover:scale-110">✔</div>
-              <h3 className="mt-6 text-2xl font-bold text-slate-900">Verified Creators</h3>
-              <p className="mt-4 leading-7 text-slate-600">
-                Every creator profile is reviewed before appearing on VgraphZ.
-              </p>
+          <div className="mt-8 md:mt-14 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+            <div className="group rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
+              <div className="text-4xl md:text-5xl">✔</div>
+              <h3 className="mt-3 md:mt-6 text-lg md:text-2xl font-bold text-slate-900">Verified</h3>
+              <p className="mt-2 text-sm md:text-base text-slate-600">Every creator is reviewed before appearing.</p>
             </div>
 
-            <div className="group rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
-              <div className="text-5xl transition duration-300 group-hover:scale-110">💬</div>
-              <h3 className="mt-6 text-2xl font-bold text-slate-900">Direct Enquiries</h3>
-              <p className="mt-4 leading-7 text-slate-600">
-                Customers contact creators directly through WhatsApp or phone calls.
-              </p>
+            <div className="group rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
+              <div className="text-4xl md:text-5xl">💬</div>
+              <h3 className="mt-3 md:mt-6 text-lg md:text-2xl font-bold text-slate-900">Direct</h3>
+              <p className="mt-2 text-sm md:text-base text-slate-600">Contact creators directly via WhatsApp or Call.</p>
             </div>
 
-            <div className="group rounded-3xl border border-slate-200 bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
-              <div className="text-5xl transition duration-300 group-hover:scale-110">⚡</div>
-              <h3 className="mt-6 text-2xl font-bold text-slate-900">More Opportunities</h3>
-              <p className="mt-4 leading-7 text-slate-600">
-                Get discovered by customers searching for creative services.
-              </p>
+            <div className="group rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-6 md:p-8 shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
+              <div className="text-4xl md:text-5xl">⚡</div>
+              <h3 className="mt-3 md:mt-6 text-lg md:text-2xl font-bold text-slate-900">Opportunity</h3>
+              <p className="mt-2 text-sm md:text-base text-slate-600">Get discovered by customers searching for services.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="bg-slate-50 py-24">
-        <div className="mx-auto max-w-7xl px-6">
-          <h2 className="text-center text-5xl font-bold tracking-tight text-slate-900">How VgraphZ Works</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-center text-lg leading-7 text-slate-600">
-            Connect customers with creative professionals in three simple steps.
+      {/* ===== HOW IT WORKS - Mobile First ===== */}
+      <section className="bg-slate-50 py-10 md:py-24">
+        <div className="mx-auto max-w-7xl px-4">
+          <h2 className="text-center text-xl md:text-5xl font-bold tracking-tight text-slate-900">How It Works</h2>
+          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-center text-sm md:text-lg leading-relaxed text-slate-600">
+            Connect with creators in three simple steps.
           </p>
 
-          <div className="mt-14 grid gap-8 md:grid-cols-3">
-            <div className="group rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
-              <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">1</div>
-              <div className="text-5xl transition duration-300 group-hover:scale-110">🔍</div>
-              <h3 className="mt-6 text-2xl font-bold text-slate-900">Search</h3>
-              <p className="mt-4 leading-7 text-slate-600">Find photographers, videographers and editors near you.</p>
+          <div className="mt-8 md:mt-14 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+            <div className="group rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-6 md:p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
+              <div className="mx-auto mb-3 md:mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">1</div>
+              <div className="text-4xl md:text-5xl">🔍</div>
+              <h3 className="mt-3 md:mt-6 text-lg md:text-2xl font-bold text-slate-900">Search</h3>
+              <p className="mt-2 text-sm md:text-base text-slate-600">Find photographers, videographers near you.</p>
             </div>
 
-            <div className="group rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
-              <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">2</div>
-              <div className="text-5xl transition duration-300 group-hover:scale-110">📞</div>
-              <h3 className="mt-6 text-2xl font-bold text-slate-900">Contact</h3>
-              <p className="mt-4 leading-7 text-slate-600">Contact creators directly through WhatsApp or phone calls.</p>
+            <div className="group rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-6 md:p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
+              <div className="mx-auto mb-3 md:mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">2</div>
+              <div className="text-4xl md:text-5xl">📞</div>
+              <h3 className="mt-3 md:mt-6 text-lg md:text-2xl font-bold text-slate-900">Contact</h3>
+              <p className="mt-2 text-sm md:text-base text-slate-600">Contact creators directly via WhatsApp or Call.</p>
             </div>
 
-            <div className="group rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
-              <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">3</div>
-              <div className="text-5xl transition duration-300 group-hover:scale-110">🎬</div>
-              <h3 className="mt-6 text-2xl font-bold text-slate-900">Complete Your Project</h3>
-              <p className="mt-4 leading-7 text-slate-600">Discuss your requirements and get your creative work completed.</p>
+            <div className="group rounded-2xl md:rounded-3xl border border-slate-200 bg-white p-6 md:p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
+              <div className="mx-auto mb-3 md:mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">3</div>
+              <div className="text-4xl md:text-5xl">🎬</div>
+              <h3 className="mt-3 md:mt-6 text-lg md:text-2xl font-bold text-slate-900">Complete</h3>
+              <p className="mt-2 text-sm md:text-base text-slate-600">Discuss requirements and get your work done.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CREATOR CTA */}
-      <section className="bg-blue-600 py-20 text-center text-white">
-        <div className="mx-auto max-w-5xl px-6">
-          <h2 className="text-5xl font-bold">Get More Clients Through VgraphZ</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-xl leading-7 text-blue-100">
-            Create your creator profile, showcase your portfolio, and let customers discover your photography,
-            videography, editing and creative services.
+      {/* ===== CTA - Mobile First ===== */}
+      <section className="bg-blue-600 py-10 md:py-20 text-center text-white">
+        <div className="mx-auto max-w-5xl px-4">
+          <h2 className="text-2xl md:text-5xl font-bold">Get More Clients</h2>
+          <p className="mx-auto mt-2 md:mt-5 max-w-2xl text-sm md:text-xl leading-relaxed text-blue-100">
+            Create your creator profile, showcase your portfolio, and let customers discover your services.
           </p>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
+          <div className="mt-6 md:mt-8 flex flex-wrap justify-center gap-3 md:gap-4">
             <Link
               href="/register"
-              className="rounded-2xl bg-white px-10 py-4 font-bold text-blue-600 shadow-sm transition hover:bg-slate-100 hover:shadow-lg"
+              className="rounded-2xl bg-white hover:bg-slate-100 px-6 md:px-10 py-3 md:py-4 text-sm md:text-base font-bold text-blue-600 shadow-sm transition active:scale-95"
             >
-              Join as a Creator
+              Join as Creator
             </Link>
             <Link
               href="/providers"
-              className="rounded-2xl border-2 border-white bg-transparent px-10 py-4 font-bold text-white transition hover:bg-white/10"
+              className="rounded-2xl border-2 border-white bg-transparent hover:bg-white/10 px-6 md:px-10 py-3 md:py-4 text-sm md:text-base font-bold text-white transition active:scale-95"
             >
               Browse Creators
             </Link>
