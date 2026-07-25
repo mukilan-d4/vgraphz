@@ -60,7 +60,6 @@ export default function ProviderDetailPage() {
   const [enquirySuccess, setEnquirySuccess] = useState("");
   const [enquiryError, setEnquiryError] = useState("");
   
-  // State for hiding comments only
   const [showComments, setShowComments] = useState(true);
 
   useEffect(() => {
@@ -268,7 +267,9 @@ export default function ProviderDetailPage() {
 
   function handleWhatsApp() {
     if (provider?.phone) {
-      window.open(`https://wa.me/${provider.phone}`, "_blank");
+      const defaultMessage = "Hello! I discovered your work on VgraphZ. Would love to connect and discuss my requirements.";
+      const encodedMessage = encodeURIComponent(defaultMessage);
+      window.open(`https://wa.me/${provider.phone}?text=${encodedMessage}`, "_blank");
     }
   }
 
@@ -596,7 +597,7 @@ export default function ProviderDetailPage() {
             </div>
           )}
 
-          {/* Comments - Hidden/Shown based on state */}
+          {/* Comments */}
           {showComments && (
             <div className="mt-6 space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {reviews.length === 0 ? (
