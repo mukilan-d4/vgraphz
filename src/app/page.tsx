@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import SearchProviders from "@/components/SearchProviders";
-import { Phone, MessageCircle, Globe, FolderOpen } from "lucide-react";
+import { Phone, MessageCircle, Globe, FolderOpen, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
@@ -49,6 +49,13 @@ export default function Home() {
 
     loadData();
   }, []);
+
+  // Generate Google Maps link from address
+  const getGoogleMapsLink = (address: string) => {
+    if (!address || !address.trim()) return null;
+    const encodedAddress = encodeURIComponent(address.trim());
+    return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
+  };
 
   const getOnlineLinks = (provider: any) => {
     const links = [];
@@ -185,6 +192,7 @@ export default function Home() {
             {providers?.map((provider) => {
               const onlineLinks = getOnlineLinks(provider);
               const hasLinks = onlineLinks.length > 0;
+              const mapsLink = getGoogleMapsLink(provider.address);
 
               return (
                 <div
@@ -202,7 +210,23 @@ export default function Home() {
                     </div>
 
                     <p className="mt-2 text-sm md:text-base font-semibold text-blue-600">{provider.category}</p>
-                    <p className="mt-1 text-sm md:text-base text-slate-600">📍 {provider.district}</p>
+                    
+                    {/* Location with Map Icon on Right */}
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-sm md:text-base text-slate-600">📍 {provider.district}</span>
+                      {mapsLink && (
+                        <a
+                          href={mapsLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-700 transition"
+                          title="View on Google Maps"
+                        >
+                          <MapPin size={16} className="shrink-0" />
+                        </a>
+                      )}
+                    </div>
+
                     {provider.experience && (
                       <p className="mt-1 text-sm md:text-base text-slate-600">⭐ {provider.experience}Y</p>
                     )}
@@ -237,7 +261,7 @@ export default function Home() {
 
                     <div className="flex-1"></div>
 
-                    {/* Action Buttons - Icons fixed size */}
+                    {/* Action Buttons */}
                     <div className="mt-4 flex gap-2">
                       <a
                         href={`tel:${provider.phone}`}
