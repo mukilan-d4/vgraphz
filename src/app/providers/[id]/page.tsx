@@ -59,6 +59,9 @@ export default function ProviderDetailPage() {
   const [enquirySubmitting, setEnquirySubmitting] = useState(false);
   const [enquirySuccess, setEnquirySuccess] = useState("");
   const [enquiryError, setEnquiryError] = useState("");
+  
+  // New state for review dropdown
+  const [showReviews, setShowReviews] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -350,7 +353,7 @@ export default function ProviderDetailPage() {
               </button>
             </div>
 
-            {/* Enquiry Form - Button centered below textarea */}
+            {/* Enquiry Form */}
             {showEnquiryForm && (
               <form
                 onSubmit={handleEnquirySubmit}
@@ -385,7 +388,6 @@ export default function ProviderDetailPage() {
                   rows={2}
                 />
 
-                {/* Button centered below textarea */}
                 <div className="flex justify-center mt-3">
                   <button
                     type="submit"
@@ -519,110 +521,130 @@ export default function ProviderDetailPage() {
           </div>
         </div>
 
-        {/* REVIEWS SECTION - No login, no name required */}
+        {/* REVIEWS SECTION - With Show/Hide Dropdown */}
         <div className="mt-6 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-          <h2 className="text-xl font-bold text-slate-900">
-            Reviews ({reviewCount})
-          </h2>
-
-          {!isOwnProfile && (
-            <div className="mt-4">
-              <textarea
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                placeholder="Write your review..."
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 resize-none"
-                rows={4}
-              />
-              {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
-              {success && <p className="text-green-600 text-sm mt-2">{success}</p>}
-              <button
-                onClick={handleSubmitReview}
-                disabled={submitting}
-                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
-              >
-                {submitting ? "Submitting..." : "Submit Review"}
-              </button>
-            </div>
-          )}
-
-          {isOwnProfile && (
-            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-700 text-sm">
-              You cannot review your own profile
-            </div>
-          )}
-
-          <div className="mt-6 space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-            {reviews.length === 0 ? (
-              <p className="text-slate-500 text-sm">No reviews yet</p>
-            ) : (
-              reviews.map((review) => (
-                <div key={review.id} className="border-b border-slate-100 pb-4 last:border-0">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                      <User size={16} className="text-blue-600" />
-                    </div>
-                    <span className="font-semibold text-slate-900 text-sm">
-                      {review.rater_id === currentUser?.id ? "You" : "User"}
-                    </span>
-                    <span className="text-xs text-slate-400">
-                      {new Date(review.created_at).toLocaleDateString()}
-                    </span>
-                    {review.rater_id === currentUser?.id && (
-                      <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                        Your Review
-                      </span>
-                    )}
-                  </div>
-
-                  {editingReviewId === review.id ? (
-                    <div className="mt-2">
-                      <textarea
-                        value={editingReviewText}
-                        onChange={(e) => setEditingReviewText(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                        rows={2}
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          onClick={() => handleEditReview(review.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-                        >
-                          <Check size={14} className="inline mr-1" /> Save
-                        </button>
-                        <button
-                          onClick={() => setEditingReviewId(null)}
-                          className="border border-slate-200 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
-                        >
-                          <X size={14} className="inline mr-1" /> Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <p className="mt-2 text-slate-700 text-sm">{review.review}</p>
-                      {review.rater_id === currentUser?.id && (
-                        <div className="flex gap-4 mt-2">
-                          <button
-                            onClick={() => startEditing(review)}
-                            className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
-                          >
-                            <Edit size={14} /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteReview(review.id)}
-                            className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              ))
-            )}
+          <div 
+            className="flex items-center justify-between cursor-pointer hover:bg-slate-50 p-2 rounded-xl transition-all duration-200"
+            onClick={() => setShowReviews(!showReviews)}
+          >
+            <h2 className="text-xl font-bold text-slate-900">
+              Reviews ({reviewCount})
+            </h2>
+            <button className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition">
+              <span className="text-sm font-medium">
+                {showReviews ? 'Hide' : 'Show'} Reviews
+              </span>
+              {showReviews ? (
+                <ChevronUp size={20} />
+              ) : (
+                <ChevronDown size={20} />
+              )}
+            </button>
           </div>
+
+          {/* Reviews Content - Hidden/Shown based on state */}
+          {showReviews && (
+            <div className="mt-4">
+              {!isOwnProfile && (
+                <div className="mb-6">
+                  <textarea
+                    value={reviewText}
+                    onChange={(e) => setReviewText(e.target.value)}
+                    placeholder="Write your review..."
+                    className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 resize-none"
+                    rows={4}
+                  />
+                  {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
+                  {success && <p className="text-green-600 text-sm mt-2">{success}</p>}
+                  <button
+                    onClick={handleSubmitReview}
+                    disabled={submitting}
+                    className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
+                  >
+                    {submitting ? "Submitting..." : "Submit Review"}
+                  </button>
+                </div>
+              )}
+
+              {isOwnProfile && (
+                <div className="mb-6 bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-700 text-sm">
+                  You cannot review your own profile
+                </div>
+              )}
+
+              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {reviews.length === 0 ? (
+                  <p className="text-slate-500 text-sm">No reviews yet</p>
+                ) : (
+                  reviews.map((review) => (
+                    <div key={review.id} className="border-b border-slate-100 pb-4 last:border-0">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User size={16} className="text-blue-600" />
+                        </div>
+                        <span className="font-semibold text-slate-900 text-sm">
+                          {review.rater_id === currentUser?.id ? "You" : "User"}
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </span>
+                        {review.rater_id === currentUser?.id && (
+                          <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                            Your Review
+                          </span>
+                        )}
+                      </div>
+
+                      {editingReviewId === review.id ? (
+                        <div className="mt-2">
+                          <textarea
+                            value={editingReviewText}
+                            onChange={(e) => setEditingReviewText(e.target.value)}
+                            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                            rows={2}
+                          />
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => handleEditReview(review.id)}
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                            >
+                              <Check size={14} className="inline mr-1" /> Save
+                            </button>
+                            <button
+                              onClick={() => setEditingReviewId(null)}
+                              className="border border-slate-200 hover:bg-slate-50 px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                            >
+                              <X size={14} className="inline mr-1" /> Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="mt-2 text-slate-700 text-sm">{review.review}</p>
+                          {review.rater_id === currentUser?.id && (
+                            <div className="flex gap-4 mt-2">
+                              <button
+                                onClick={() => startEditing(review)}
+                                className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
+                              >
+                                <Edit size={14} /> Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteReview(review.id)}
+                                className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
