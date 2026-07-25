@@ -51,6 +51,7 @@ export default function ProviderDetailPage() {
   const [success, setSuccess] = useState("");
   const [editingReviewId, setEditingReviewId] = useState<string | null>(null);
   const [editingReviewText, setEditingReviewText] = useState("");
+  const [editingPassword, setEditingPassword] = useState("");
   const [showEnquiryForm, setShowEnquiryForm] = useState(false);
   const [enquiryName, setEnquiryName] = useState("");
   const [enquiryPhone, setEnquiryPhone] = useState("");
@@ -62,6 +63,9 @@ export default function ProviderDetailPage() {
   
   // State for hiding comments only
   const [showComments, setShowComments] = useState(true);
+
+  // Store reviewer name (optional - ask user to set a name for their review)
+  const [reviewerName, setReviewerName] = useState("");
 
   useEffect(() => {
     loadData();
@@ -138,7 +142,8 @@ export default function ProviderDetailPage() {
         .insert({
           provider_id: Number(providerId),
           rater_id: currentUser?.id || null,
-          review: reviewText.trim()
+          review: reviewText.trim(),
+          reviewer_name: reviewerName.trim() || null
         })
         .select()
         .single();
@@ -148,6 +153,7 @@ export default function ProviderDetailPage() {
       setReviews([data, ...reviews]);
       setReviewCount(reviewCount + 1);
       setReviewText("");
+      setReviewerName("");
       setSuccess("Review submitted successfully");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
@@ -163,47 +169,73 @@ export default function ProviderDetailPage() {
   }
 
   async function handleEditReview(id: string) {
-    if (!editingReviewText.trim()) return;
-    const { error } = await supabase
-      .from("reviews")
-      .update({
-        review: editingReviewText.trim()
-      })
-      .eq("id", id);
-
-    if (error) {
-      setError(error.message);
+    if (!editingReviewText.trim()) {
+      setError("Review cannot be empty");
       return;
     }
 
-    setReviews(
-      reviews.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              review: editingReviewText.trim()
-            }
-          : r
-      )
-    );
-    setEditingReviewId(null);
-    setEditingReviewText("");
+    try {
+      setSubmitting(true);
+      const { error } = await supabase
+        .from("reviews")
+        .update({
+          review: editingReviewText.trim()
+        })
+        .eq("id", id);
+
+      if (error) {
+        setError(error.message);
+        setSubmitting(false);
+        return;
+      }
+
+      setReviews(
+        reviews.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                review: editingReviewText.trim()
+              }
+            : r
+        )
+      );
+      setEditingReviewId(null);
+      setEditingReviewText("");
+      setSuccess("Review updated successfully");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleDeleteReview(id: string) {
     const ok = confirm("Delete this review?");
     if (!ok) return;
-    const { error } = await supabase
-      .from("reviews")
-      .delete()
-      .eq("id", id);
 
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      setSubmitting(true);
+      const { error } = await supabase
+        .from("reviews")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        setError(error.message);
+        setSubmitting(false);
+        return;
+      }
+
+      setReviews(reviews.filter((r) => r.id !== id));
+      setReviewCount(reviewCount - 1);
+      setSuccess("Review deleted successfully");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
-    setReviews(reviews.filter((r) => r.id !== id));
-    setReviewCount(reviewCount - 1);
   }
 
   async function handleEnquirySubmit(e: React.FormEvent) {
@@ -521,7 +553,7 @@ export default function ProviderDetailPage() {
           </div>
         </div>
 
-        {/* REVIEWS SECTION - Write review always visible, comments hidden */}
+        {/* REVIEWS SECTION */}
         <div className="mt-6 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-900">
@@ -545,6 +577,14 @@ export default function ProviderDetailPage() {
           {/* Write Review - Always Visible */}
           {!isOwnProfile && (
             <div className="mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <input
+                  placeholder="Your Name (optional)"
+                  value={reviewerName}
+                  onChange={(e) => setReviewerName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                />
+              </div>
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
@@ -583,7 +623,7 @@ export default function ProviderDetailPage() {
                         <User size={16} className="text-blue-600" />
                       </div>
                       <span className="font-semibold text-slate-900 text-sm">
-                        {review.rater_id === currentUser?.id ? "You" : "User"}
+                        {review.reviewer_name || "User"}
                       </span>
                       <span className="text-xs text-slate-400">
                         {new Date(review.created_at).toLocaleDateString()}
@@ -606,6 +646,7 @@ export default function ProviderDetailPage() {
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => handleEditReview(review.id)}
+                            disabled={submitting}
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
                           >
                             <Check size={14} className="inline mr-1" /> Save
@@ -621,22 +662,20 @@ export default function ProviderDetailPage() {
                     ) : (
                       <>
                         <p className="mt-2 text-slate-700 text-sm">{review.review}</p>
-                        {review.rater_id === currentUser?.id && (
-                          <div className="flex gap-4 mt-2">
-                            <button
-                              onClick={() => startEditing(review)}
-                              className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
-                            >
-                              <Edit size={14} /> Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReview(review.id)}
-                              className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
-                            >
-                              <Trash2 size={14} /> Delete
-                            </button>
-                          </div>
-                        )}
+                        <div className="flex gap-4 mt-2">
+                          <button
+                            onClick={() => startEditing(review)}
+                            className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
+                          >
+                            <Edit size={14} /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(review.id)}
+                            className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
                       </>
                     )}
                   </div>
