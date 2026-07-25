@@ -31,18 +31,15 @@ export default function Navbar() {
             VgraphZ
           </Link>
 
-          {/* Center Navigation - Hidden on mobile */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* Navigation Links */}
+          <div className="flex items-center gap-6">
+            <Link href="/" className="text-slate-600 hover:text-blue-600 transition">
+              Home
+            </Link>
             <Link href="/providers" className="text-slate-600 hover:text-blue-600 transition">
               Providers
             </Link>
-            <Link href="/join-provider" className="text-slate-600 hover:text-blue-600 transition">
-              Join Now
-            </Link>
-          </div>
-
-          {/* Right side - Login/Register or Dashboard */}
-          <div className="flex items-center gap-3">
+            
             {user ? (
               <Link
                 href="/provider-dashboard"
@@ -52,19 +49,19 @@ export default function Navbar() {
               </Link>
             ) : (
               <>
-                {/* Login - Just text, no background */}
-                <Link
-                  href="/login"
-                  className="text-sm text-slate-600 hover:text-blue-600 transition"
-                >
-                  Login
-                </Link>
-                {/* Join Now - Highlighted button */}
+                {/* Join Now - Highlighted Button */}
                 <Link
                   href="/register"
                   className="rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition"
                 >
                   Join Now
+                </Link>
+                {/* Login - Text Link */}
+                <Link
+                  href="/login"
+                  className="text-sm text-slate-600 hover:text-blue-600 transition"
+                >
+                  Login
                 </Link>
               </>
             )}
