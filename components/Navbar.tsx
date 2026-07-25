@@ -1,209 +1,75 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
+export default function Navbar() {
+  const [user, setUser] = useState<any>(null);
 
-export default function Navbar(){
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+    };
+    getUser();
 
-const [open,setOpen]=useState(false);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user || null);
+    });
 
+    return () => subscription.unsubscribe();
+  }, []);
 
-return (
+  return (
+    <nav className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          
+          {/* Logo */}
+          <Link href="/" className="text-xl font-bold text-slate-900">
+            VgraphZ
+          </Link>
 
-<nav className="
-sticky
-top-0
-z-50
-border-b
-border-zinc-800
-bg-black/70
-backdrop-blur-xl
-">
+          {/* Center Navigation */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/providers" className="text-slate-600 hover:text-blue-600 transition">
+              Providers
+            </Link>
+            <Link href="/join-provider" className="text-slate-600 hover:text-blue-600 transition">
+              Join
+            </Link>
+          </div>
 
-
-<div className="
-mx-auto
-max-w-7xl
-px-5
-py-4
-flex
-items-center
-justify-between
-">
-
-
-<Link
-
-href="/"
-
-className="
-text-3xl
-font-extrabold
-tracking-tight
-"
-
->
-
-<span className="text-white">
-Vgraph
-</span>
-
-<span className="text-zinc-400">
-Z
-</span>
-
-</Link>
-
-
-
-<div className="
-hidden
-md:flex
-items-center
-gap-8
-">
-
-
-<Link
-href="/"
-className="
-text-zinc-300
-hover:text-white
-transition
-"
->
-Home
-</Link>
-
-
-<Link
-href="/providers"
-className="
-text-zinc-300
-hover:text-white
-transition
-"
->
-Providers
-</Link>
-
-
-
-<Link
-href="/register"
-className="
-rounded-xl
-bg-white
-text-black
-px-5
-py-2
-font-semibold
-hover:bg-zinc-200
-transition
-"
->
-Join Now
-</Link>
-
-
-
-<Link
-href="/login"
-className="
-text-zinc-300
-hover:text-white
-transition
-"
->
-Login
-</Link>
-
-
-</div>
-
-
-
-<button
-
-onClick={()=>setOpen(!open)}
-
-className="
-md:hidden
-text-white
-"
-
->
-
-{
-open ?
-
-<X size={28}/> :
-
-<Menu size={28}/>
-
-}
-
-</button>
-
-
-</div>
-
-
-
-{
-open &&
-
-<div className="
-md:hidden
-border-t
-border-zinc-800
-px-5
-py-5
-space-y-4
-">
-
-
-<Link
-href="/"
-className="block text-zinc-300"
->
-Home
-</Link>
-
-
-<Link
-href="/providers"
-className="block text-zinc-300"
->
-Providers
-</Link>
-
-
-<Link
-href="/register"
-className="block text-red-500"
->
-Join Now
-</Link>
-
-
-<Link
-href="/login"
-className="block text-zinc-300"
->
-Login
-</Link>
-
-
-</div>
-
-}
-
-
-</nav>
-
-);
-
+          {/* Right side - Login/Register or Dashboard */}
+          <div className="flex items-center gap-3">
+            {user ? (
+              <Link
+                href="/provider-dashboard"
+                className="rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-sm text-slate-600 hover:text-blue-600 transition"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition"
+                >
+                  Register
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
 }
