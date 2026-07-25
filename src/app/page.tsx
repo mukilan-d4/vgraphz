@@ -1,4 +1,3 @@
-"use client";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import SearchProviders from "@/components/SearchProviders";
@@ -44,10 +43,10 @@ export default async function Home() {
   // Get online presence links
   const getOnlineLinks = (provider: any) => {
     const links = [];
-    if (provider.website) links.push({ type: "website", url: provider.website, icon: Globe, label: "Website", emoji: "🌐" });
-    if (provider.instagram) links.push({ type: "instagram", url: provider.instagram, icon: null, label: "Instagram", emoji: "📸" });
-    if (provider.youtube) links.push({ type: "youtube", url: provider.youtube, icon: null, label: "YouTube", emoji: "▶️" });
-    if (provider.portfolio) links.push({ type: "portfolio", url: provider.portfolio, icon: FolderOpen, label: "Portfolio", emoji: "📁" });
+    if (provider.website) links.push({ type: "website", url: provider.website, label: "Website", emoji: "🌐" });
+    if (provider.instagram) links.push({ type: "instagram", url: provider.instagram, label: "Instagram", emoji: "📸" });
+    if (provider.youtube) links.push({ type: "youtube", url: provider.youtube, label: "YouTube", emoji: "▶️" });
+    if (provider.portfolio) links.push({ type: "portfolio", url: provider.portfolio, label: "Portfolio", emoji: "📁" });
     return links;
   };
 
@@ -154,7 +153,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* FEATURED CREATORS - With equal button alignment */}
+      {/* FEATURED CREATORS */}
       <section className="bg-slate-50 py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex items-center justify-between">
@@ -173,13 +172,11 @@ export default async function Home() {
               const hasLinks = onlineLinks.length > 0;
 
               return (
-                // Clickable card - redirects to provider page
-                <Link
+                <div
                   key={provider.id}
-                  href={`/providers/${provider.id}`}
-                  className="group rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl block"
+                  className="group rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl flex flex-col h-full"
                 >
-                  <div className="p-7 flex flex-col h-full">
+                  <div className="p-7 flex-1 flex flex-col">
                     {/* Name and Verified Badge */}
                     <div className="flex items-center justify-between">
                       <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
@@ -201,49 +198,42 @@ export default async function Home() {
                       <p className="mt-2 leading-7 text-slate-600">⭐ {provider.experience} Years Experience</p>
                     )}
 
-                    {/* Online Presence Links - Fixed height to keep buttons equal */}
-                    <div className="mt-4 min-h-[60px]">
-                      {hasLinks ? (
-                        <>
-                          <p className="text-xs font-semibold text-slate-500 mb-2">🔗 Online Presence</p>
-                          <div className="flex flex-wrap gap-2">
-                            {onlineLinks.map((link, index) => {
-                              const Icon = link.icon;
-                              return (
-                                <a
-                                  key={index}
-                                  href={link.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  onClick={(e) => e.stopPropagation()}
-                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 hover:scale-105 ${
-                                    link.type === "website"
-                                      ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                                      : link.type === "instagram"
-                                      ? "bg-pink-50 text-pink-600 hover:bg-pink-100"
-                                      : link.type === "youtube"
-                                      ? "bg-red-50 text-red-600 hover:bg-red-100"
-                                      : "bg-purple-50 text-purple-600 hover:bg-purple-100"
-                                  }`}
-                                >
-                                  <span>{link.emoji}</span>
-                                  {Icon && <Icon size={14} />}
-                                  {link.label}
-                                </a>
-                              );
-                            })}
-                          </div>
-                        </>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic">No online presence listed</p>
-                      )}
-                    </div>
+                    {/* Online Presence Links - Only show if provider has any */}
+                    {hasLinks && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold text-slate-500 mb-2">🔗 Online Presence</p>
+                        <div className="flex flex-wrap gap-2">
+                          {onlineLinks.map((link, index) => (
+                            <a
+                              key={index}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 hover:scale-105 ${
+                                link.type === "website"
+                                  ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                  : link.type === "instagram"
+                                  ? "bg-pink-50 text-pink-600 hover:bg-pink-100"
+                                  : link.type === "youtube"
+                                  ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                  : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+                              }`}
+                            >
+                              <span>{link.emoji}</span>
+                              {link.label}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-                    {/* ACTION BUTTONS - Fixed height to keep alignment equal */}
+                    {/* Spacer to push buttons to bottom */}
+                    <div className="flex-1"></div>
+
+                    {/* ACTION BUTTONS - Always at bottom, equal alignment */}
                     <div className="mt-4 flex gap-2">
                       <a
                         href={`tel:${provider.phone}`}
-                        onClick={(e) => e.stopPropagation()}
                         className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
                       >
                         <Phone size={16} />
@@ -253,7 +243,6 @@ export default async function Home() {
                         href={`https://wa.me/${provider.whatsapp || provider.phone}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
                         className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
                       >
                         <MessageCircle size={16} />
@@ -261,14 +250,15 @@ export default async function Home() {
                       </a>
                     </div>
 
-                    {/* View Profile Button - Fixed height */}
-                    <div className="mt-3">
-                      <span className="block rounded-2xl bg-purple-600 hover:bg-blue-600 py-2.5 text-center font-semibold text-white transition-all duration-300 hover:shadow-md hover:scale-[1.02]">
-                        View Profile
-                      </span>
-                    </div>
+                    {/* View Profile Button - Full width, always at bottom */}
+                    <Link
+                      href={`/providers/${provider.id}`}
+                      className="mt-3 block w-full rounded-2xl bg-purple-600 hover:bg-blue-600 py-2.5 text-center font-semibold text-white transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                    >
+                      View Profile
+                    </Link>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
