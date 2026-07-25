@@ -31,6 +31,7 @@ interface Review {
   id: string;
   provider_id: number;
   rater_id: string;
+  rater_name?: string;
   review: string;
   created_at: string;
 }
