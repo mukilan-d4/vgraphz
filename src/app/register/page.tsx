@@ -6,18 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
-// All Tamil Nadu Districts
-const TAMIL_NADU_DISTRICTS = [
-  "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore",
-  "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram",
-  "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam",
-  "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram",
-  "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni",
-  "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur",
-  "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore",
-  "Viluppuram", "Virudhunagar"
-];
-
 export default function RegisterPage() {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -26,11 +14,32 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState("Weak");
   const [phone, setPhone] = useState("");
   const [category, setCategory] = useState("");
   const [district, setDistrict] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  function checkStrength(value: string) {
+    setPassword(value);
+
+    let strength = "Weak";
+
+    if (
+      value.length >= 8 &&
+      /[A-Z]/.test(value) &&
+      /[a-z]/.test(value) &&
+      /[0-9]/.test(value) &&
+      /[^A-Za-z0-9]/.test(value)
+    ) {
+      strength = "Strong";
+    } else if (value.length >= 6) {
+      strength = "Medium";
+    }
+
+    setPasswordStrength(strength);
+  }
 
   async function register(e: React.FormEvent) {
     e.preventDefault();
@@ -43,21 +52,15 @@ export default function RegisterPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must contain at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must contain at least 8 characters.");
       setLoading(false);
       return;
     }
 
     const { data, error: signupError } = await supabase.auth.signUp({
       email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-          phone: phone,
-        },
-      },
+      password
     });
 
     const user = data.user;
@@ -107,7 +110,7 @@ export default function RegisterPage() {
         {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-slate-900">VgraphZ</h1>
-          <p className="text-slate-600 mt-1">Create your creator account</p>
+          <p className="text-slate-600 mt-1">Create your provider account</p>
         </div>
 
         {/* Register Card */}
@@ -145,30 +148,54 @@ export default function RegisterPage() {
               <label className="block text-sm font-semibold mb-2">
                 Password *
               </label>
+
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => checkStrength(e.target.value)}
                   placeholder="Create a password"
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
                   required
+                  minLength={8}
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 flex items-center px-4 z-20 text-slate-400 hover:text-blue-600 transition"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? (
+                    <EyeOff size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
+
+              <p className="mt-2 text-sm">
+                Strength :
+                <span
+                  className={
+                    passwordStrength === "Weak"
+                      ? "text-red-600"
+                      : passwordStrength === "Medium"
+                      ? "text-yellow-600"
+                      : "text-green-600"
+                  }
+                >
+                  {" "}
+                  {passwordStrength}
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-slate-500">Minimum 8 characters</p>
             </div>
 
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Confirm Password *
               </label>
+
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
@@ -178,17 +205,31 @@ export default function RegisterPage() {
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
                   required
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute inset-y-0 right-0 flex items-center px-4 z-20 text-slate-400 hover:text-blue-600 transition"
                 >
-                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showConfirmPassword ? (
+                    <EyeOff size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
                 </button>
               </div>
+
               {confirmPassword && (
-                <p className={`mt-2 text-sm ${password === confirmPassword ? "text-green-600" : "text-red-600"}`}>
-                  {password === confirmPassword ? "✓ Passwords Match" : "✗ Passwords Do Not Match"}
+                <p
+                  className={`mt-2 text-sm ${
+                    password === confirmPassword
+                      ? "text-green-600"
+                      : "text-red-600"
+                  }`}
+                >
+                  {password === confirmPassword
+                    ? "✓ Passwords Match"
+                    : "✗ Passwords Do Not Match"}
                 </p>
               )}
             </div>
@@ -204,7 +245,6 @@ export default function RegisterPage() {
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
                 required
-                minLength={10}
               />
             </div>
 
@@ -215,7 +255,8 @@ export default function RegisterPage() {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition appearance-none"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                required
               >
                 <option value="">Select your category</option>
                 <option value="Videographer">Videographer</option>
@@ -233,12 +274,47 @@ export default function RegisterPage() {
               <select
                 value={district}
                 onChange={(e) => setDistrict(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition appearance-none"
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                required
               >
                 <option value="">Select your district</option>
-                {TAMIL_NADU_DISTRICTS.map((d) => (
-                  <option key={d} value={d}>{d}</option>
-                ))}
+                <option value="Ariyalur">Ariyalur</option>
+                <option value="Chengalpattu">Chengalpattu</option>
+                <option value="Chennai">Chennai</option>
+                <option value="Coimbatore">Coimbatore</option>
+                <option value="Cuddalore">Cuddalore</option>
+                <option value="Dharmapuri">Dharmapuri</option>
+                <option value="Dindigul">Dindigul</option>
+                <option value="Erode">Erode</option>
+                <option value="Kallakurichi">Kallakurichi</option>
+                <option value="Kancheepuram">Kancheepuram</option>
+                <option value="Karur">Karur</option>
+                <option value="Krishnagiri">Krishnagiri</option>
+                <option value="Madurai">Madurai</option>
+                <option value="Mayiladuthurai">Mayiladuthurai</option>
+                <option value="Nagapattinam">Nagapattinam</option>
+                <option value="Namakkal">Namakkal</option>
+                <option value="Nilgiris">Nilgiris</option>
+                <option value="Perambalur">Perambalur</option>
+                <option value="Pudukkottai">Pudukkottai</option>
+                <option value="Ramanathapuram">Ramanathapuram</option>
+                <option value="Ranipet">Ranipet</option>
+                <option value="Salem">Salem</option>
+                <option value="Sivaganga">Sivaganga</option>
+                <option value="Tenkasi">Tenkasi</option>
+                <option value="Thanjavur">Thanjavur</option>
+                <option value="Theni">Theni</option>
+                <option value="Thoothukudi">Thoothukudi</option>
+                <option value="Tiruchirappalli">Tiruchirappalli</option>
+                <option value="Tirunelveli">Tirunelveli</option>
+                <option value="Tirupathur">Tirupathur</option>
+                <option value="Tiruppur">Tiruppur</option>
+                <option value="Tiruvallur">Tiruvallur</option>
+                <option value="Tiruvannamalai">Tiruvannamalai</option>
+                <option value="Tiruvarur">Tiruvarur</option>
+                <option value="Vellore">Vellore</option>
+                <option value="Viluppuram">Viluppuram</option>
+                <option value="Virudhunagar">Virudhunagar</option>
               </select>
             </div>
 
@@ -251,7 +327,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 py-3.5 text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 py-3.5 text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -272,6 +348,15 @@ export default function RegisterPage() {
                 Sign In
               </Link>
             </p>
+
+            <div className="mt-4 p-4 bg-blue-50 rounded-2xl border border-blue-100">
+              <p className="text-xs text-slate-600">
+                <span className="font-semibold text-blue-700">📝 Quick Registration</span>
+                <br />
+                After creating your account, you'll be able to complete your full profile including:
+                portfolio, experience, skills, social links, and more from your dashboard.
+              </p>
+            </div>
           </form>
         </div>
 
