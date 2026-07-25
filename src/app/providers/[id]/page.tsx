@@ -265,7 +265,7 @@ export default function ProviderDetailPage() {
     }
   }
 
-  // FIXED: WhatsApp function with proper formatting
+  // WhatsApp - opens with pre-filled message (like JustDial)
   function handleWhatsApp() {
     if (!provider?.phone) {
       alert("Phone number not available");
@@ -275,20 +275,16 @@ export default function ProviderDetailPage() {
     // Clean phone number: remove spaces, dashes, plus signs
     let phoneNumber = provider.phone.replace(/\s/g, '').replace(/-/g, '').replace(/\+/g, '');
     
-    // Add country code if not present (assuming India +91)
+    // Add country code if not present (India +91)
     if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {
       phoneNumber = '91' + phoneNumber;
     }
 
-    // Ensure it starts with 91 for India
-    if (!phoneNumber.startsWith('91')) {
-      phoneNumber = '91' + phoneNumber;
-    }
-
+    // Default message - pre-filled, user clicks send manually
     const defaultMessage = "Hello! I discovered your work on VgraphZ. Would love to connect and discuss my requirements.";
     const encodedMessage = encodeURIComponent(defaultMessage);
     
-    // Open WhatsApp with the formatted number and message
+    // Opens WhatsApp with message pre-filled (user clicks send)
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
   }
 
