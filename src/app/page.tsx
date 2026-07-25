@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import SearchProviders from "@/components/SearchProviders";
-import { Phone, MessageCircle, Globe, Instagram, Youtube, FolderOpen } from "lucide-react";
+import { Phone, MessageCircle, Globe, FolderOpen } from "lucide-react";
+// Note: Instagram and Youtube icons are not available in this version
+// Using simple emoji icons instead
 
 export default async function Home() {
   // Get approved creators/providers
@@ -43,10 +45,10 @@ export default async function Home() {
   // Get online presence links
   const getOnlineLinks = (provider: any) => {
     const links = [];
-    if (provider.website) links.push({ type: "website", url: provider.website, icon: Globe, label: "Website" });
-    if (provider.instagram) links.push({ type: "instagram", url: provider.instagram, icon: Instagram, label: "Instagram" });
-    if (provider.youtube) links.push({ type: "youtube", url: provider.youtube, icon: Youtube, label: "YouTube" });
-    if (provider.portfolio) links.push({ type: "portfolio", url: provider.portfolio, icon: FolderOpen, label: "Portfolio" });
+    if (provider.website) links.push({ type: "website", url: provider.website, icon: Globe, label: "Website", emoji: "🌐" });
+    if (provider.instagram) links.push({ type: "instagram", url: provider.instagram, icon: null, label: "Instagram", emoji: "📸" });
+    if (provider.youtube) links.push({ type: "youtube", url: provider.youtube, icon: null, label: "YouTube", emoji: "▶️" });
+    if (provider.portfolio) links.push({ type: "portfolio", url: provider.portfolio, icon: FolderOpen, label: "Portfolio", emoji: "📁" });
     return links;
   };
 
@@ -221,7 +223,8 @@ export default async function Home() {
                                     : "bg-purple-50 text-purple-600 hover:bg-purple-100"
                                 }`}
                               >
-                                <Icon size={14} />
+                                <span>{link.emoji}</span>
+                                {Icon && <Icon size={14} />}
                                 {link.label}
                               </a>
                             );
