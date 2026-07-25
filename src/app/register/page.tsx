@@ -47,14 +47,16 @@ export default function RegisterPage() {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [phoneError, setPhoneError] = useState("");
 
+  // Character limit for address
   const MAX_ADDRESS_LENGTH = 200;
 
   const getGoogleMapsLink = (address: string) => {
-    if (!address || !address.trim()) return null;
+    if (!address.trim()) return null;
     const encodedAddress = encodeURIComponent(address.trim());
     return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
   };
 
+  // Validate phone number - exactly 10 digits
   const validatePhone = (value: string): { valid: boolean; message: string } => {
     const digitsOnly = value.replace(/\D/g, '');
     if (!digitsOnly) return { valid: false, message: "Phone number is required" };
@@ -72,6 +74,7 @@ export default function RegisterPage() {
     setPhoneError(validation.valid ? "" : validation.message);
   };
 
+  // Validate email format
   const validateEmailFormat = (email: string): { valid: boolean; message: string } => {
     const trimmed = email.trim();
     if (!trimmed) return { valid: false, message: "Email is required" };
@@ -175,6 +178,7 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
+    // Validate email
     const validation = validateEmailFormat(email);
     if (!validation.valid) {
       setError(validation.message);
@@ -182,6 +186,7 @@ export default function RegisterPage() {
       return;
     }
 
+    // Validate phone
     const phoneValidation = validatePhone(phone);
     if (!phoneValidation.valid) {
       setError(phoneValidation.message);
@@ -266,11 +271,13 @@ export default function RegisterPage() {
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg">
         
+        {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-slate-900">VgraphZ</h1>
           <p className="text-slate-600 mt-1">Create your provider account</p>
         </div>
 
+        {/* Register Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
           <form onSubmit={register} className="space-y-4">
             {/* Full Name */}
@@ -331,7 +338,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Password with red "Minimum 8 characters" */}
+            {/* Password */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Password *
@@ -361,8 +368,10 @@ export default function RegisterPage() {
                   "text-green-600"
                 }>{passwordStrength}</span>
               </p>
-              {/* ✅ Red color for minimum characters */}
-              <p className="mt-1 text-xs text-red-600 font-medium">Minimum 8 characters</p>
+              {/* ✅ Changed: Minimum 8 characters in RED */}
+              <p className="mt-1 text-xs text-red-600 font-medium">
+                Minimum 8 characters
+              </p>
             </div>
 
             {/* Confirm Password */}
@@ -490,7 +499,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Address with red "Click on map to select location" */}
+            {/* Address */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Address (Optional)
@@ -515,21 +524,18 @@ export default function RegisterPage() {
                     )}
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (address.trim()) {
-                      window.open(mapsLink || `https://www.google.com/maps`, "_blank");
-                    } else {
-                      window.open("https://www.google.com/maps", "_blank");
-                    }
-                  }}
-                  className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl transition-all duration-200 whitespace-nowrap hover:shadow-md active:scale-95"
-                  title="Open Google Maps"
-                >
-                  <MapPin size={18} />
-                  <span className="hidden sm:inline text-sm font-medium">Map</span>
-                </button>
+                {address && (
+                  <a
+                    href={mapsLink || `https://www.google.com/maps`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-2xl transition whitespace-nowrap"
+                    title="Open in Google Maps"
+                  >
+                    <MapPin size={18} />
+                    <span className="hidden sm:inline text-sm">Map</span>
+                  </a>
+                )}
               </div>
               <div className="flex justify-between mt-1">
                 <p className="text-xs text-slate-400">
@@ -539,19 +545,11 @@ export default function RegisterPage() {
                     `${addressLength}/${MAX_ADDRESS_LENGTH} characters`
                   )}
                 </p>
-                {mapsLink && (
-                  <a
-                    href={mapsLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-blue-600 hover:text-blue-700 font-medium transition"
-                  >
-                    View on Map →
-                  </a>
-                )}
               </div>
-              {/* ✅ Red color for "Click on map to select location" */}
-              <p className="mt-1 text-xs text-red-600 font-medium">📍 Click on map to select location</p>
+              {/* ✅ Changed: Copy address from map in RED */}
+              <p className="mt-1 text-xs text-red-600 font-medium">
+                Copy address from map
+              </p>
             </div>
 
             {/* About */}
