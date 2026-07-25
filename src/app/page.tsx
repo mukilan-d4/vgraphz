@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import SearchProviders from "@/components/SearchProviders";
-import { Phone, MessageCircle } from "lucide-react";
+import { Phone, MessageCircle, Globe, Instagram, Youtube, FolderOpen } from "lucide-react";
 
 export default async function Home() {
   // Get approved creators/providers
@@ -34,6 +34,21 @@ export default async function Home() {
     if (p.category) categories.add(p.category);
   });
   const categoriesCount = categories.size || 0;
+
+  // Helper to check if provider has any online presence
+  const hasOnlinePresence = (provider: any) => {
+    return provider.website || provider.instagram || provider.youtube || provider.portfolio;
+  };
+
+  // Get online presence links
+  const getOnlineLinks = (provider: any) => {
+    const links = [];
+    if (provider.website) links.push({ type: "website", url: provider.website, icon: Globe, label: "Website" });
+    if (provider.instagram) links.push({ type: "instagram", url: provider.instagram, icon: Instagram, label: "Instagram" });
+    if (provider.youtube) links.push({ type: "youtube", url: provider.youtube, icon: Youtube, label: "YouTube" });
+    if (provider.portfolio) links.push({ type: "portfolio", url: provider.portfolio, icon: FolderOpen, label: "Portfolio" });
+    return links;
+  };
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -138,7 +153,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* FEATURED CREATORS - Without Profile Pictures */}
+      {/* FEATURED CREATORS - With Online Presence Links */}
       <section className="bg-slate-50 py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex items-center justify-between">
@@ -152,53 +167,100 @@ export default async function Home() {
           </div>
 
           <div className="mt-10 grid gap-8 md:grid-cols-3">
-            {providers?.map((provider) => (
-              <div
-                key={provider.id}
-                className="group rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl"
-              >
-                <div className="p-7">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-2xl font-bold text-slate-900">{provider.name}</h3>
-                    <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                      ✔ Verified
-                    </span>
-                  </div>
-                  <p className="mt-4 font-semibold text-blue-600">{provider.category}</p>
-                  <p className="mt-2 leading-7 text-slate-600">📍 {provider.district}</p>
-                  {provider.experience && (
-                    <p className="mt-2 leading-7 text-slate-600">⭐ {provider.experience} Years Experience</p>
-                  )}
+            {providers?.map((provider) => {
+              const onlineLinks = getOnlineLinks(provider);
+              const hasLinks = onlineLinks.length > 0;
 
-                  {/* ACTION BUTTONS */}
-                  <div className="mt-4 flex gap-2">
-                    <a
-                      href={`tel:${provider.phone}`}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
-                    >
-                      <Phone size={16} />
-                      Call
-                    </a>
-                    <a
-                      href={`https://wa.me/${provider.whatsapp || provider.phone}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
-                    >
-                      <MessageCircle size={16} />
-                      WhatsApp
-                    </a>
-                  </div>
+              return (
+                <div
+                  key={provider.id}
+                  className="group rounded-3xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl"
+                >
+                  <div className="p-7">
+                    {/* Name and Verified Badge */}
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-2xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors duration-300">
+                        {provider.name}
+                      </h3>
+                      <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                        ✔ Verified
+                      </span>
+                    </div>
 
-                  <Link
-                    href={`/providers/${provider.id}`}
-                    className="mt-3 block rounded-2xl bg-purple-600 hover:bg-purple-700 py-2.5 text-center font-semibold text-white transition-all duration-200 hover:shadow-md"
-                  >
-                    View Profile
-                  </Link>
+                    {/* Category */}
+                    <p className="mt-4 font-semibold text-blue-600">{provider.category}</p>
+
+                    {/* Location */}
+                    <p className="mt-2 leading-7 text-slate-600">📍 {provider.district}</p>
+
+                    {/* Experience */}
+                    {provider.experience && (
+                      <p className="mt-2 leading-7 text-slate-600">⭐ {provider.experience} Years Experience</p>
+                    )}
+
+                    {/* Online Presence Links - Only show if provider has any */}
+                    {hasLinks && (
+                      <div className="mt-4">
+                        <p className="text-xs font-semibold text-slate-500 mb-2">🔗 Online Presence</p>
+                        <div className="flex flex-wrap gap-2">
+                          {onlineLinks.map((link, index) => {
+                            const Icon = link.icon;
+                            return (
+                              <a
+                                key={index}
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all duration-200 hover:scale-105 ${
+                                  link.type === "website"
+                                    ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                                    : link.type === "instagram"
+                                    ? "bg-pink-50 text-pink-600 hover:bg-pink-100"
+                                    : link.type === "youtube"
+                                    ? "bg-red-50 text-red-600 hover:bg-red-100"
+                                    : "bg-purple-50 text-purple-600 hover:bg-purple-100"
+                                }`}
+                              >
+                                <Icon size={14} />
+                                {link.label}
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* ACTION BUTTONS */}
+                    <div className="mt-4 flex gap-2">
+                      <a
+                        href={`tel:${provider.phone}`}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                      >
+                        <Phone size={16} />
+                        Call
+                      </a>
+                      <a
+                        href={`https://wa.me/${provider.whatsapp || provider.phone}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                      >
+                        <MessageCircle size={16} />
+                        WhatsApp
+                      </a>
+                    </div>
+
+                    {/* View Profile Button - Changes color on hover */}
+                    <Link
+                      href={`/providers/${provider.id}`}
+                      className="mt-3 block rounded-2xl bg-purple-600 hover:bg-blue-600 py-2.5 text-center font-semibold text-white transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
+                    >
+                      View Profile
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
