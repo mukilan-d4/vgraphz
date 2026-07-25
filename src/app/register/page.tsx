@@ -47,16 +47,14 @@ export default function RegisterPage() {
   const [checkingEmail, setCheckingEmail] = useState(false);
   const [phoneError, setPhoneError] = useState("");
 
-  // Character limit for address
   const MAX_ADDRESS_LENGTH = 200;
 
   const getGoogleMapsLink = (address: string) => {
-    if (!address.trim()) return null;
+    if (!address || !address.trim()) return null;
     const encodedAddress = encodeURIComponent(address.trim());
     return `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`;
   };
 
-  // Validate phone number - exactly 10 digits
   const validatePhone = (value: string): { valid: boolean; message: string } => {
     const digitsOnly = value.replace(/\D/g, '');
     if (!digitsOnly) return { valid: false, message: "Phone number is required" };
@@ -74,7 +72,6 @@ export default function RegisterPage() {
     setPhoneError(validation.valid ? "" : validation.message);
   };
 
-  // Validate email format
   const validateEmailFormat = (email: string): { valid: boolean; message: string } => {
     const trimmed = email.trim();
     if (!trimmed) return { valid: false, message: "Email is required" };
@@ -178,7 +175,6 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
 
-    // Validate email
     const validation = validateEmailFormat(email);
     if (!validation.valid) {
       setError(validation.message);
@@ -186,7 +182,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Validate phone
     const phoneValidation = validatePhone(phone);
     if (!phoneValidation.valid) {
       setError(phoneValidation.message);
@@ -271,13 +266,11 @@ export default function RegisterPage() {
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg">
         
-        {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-slate-900">VgraphZ</h1>
           <p className="text-slate-600 mt-1">Create your provider account</p>
         </div>
 
-        {/* Register Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
           <form onSubmit={register} className="space-y-4">
             {/* Full Name */}
@@ -338,7 +331,7 @@ export default function RegisterPage() {
               )}
             </div>
 
-            {/* Password */}
+            {/* Password with red "Minimum 8 characters" */}
             <div>
               <label className="block text-sm font-semibold mb-2">
                 Password *
@@ -368,7 +361,8 @@ export default function RegisterPage() {
                   "text-green-600"
                 }>{passwordStrength}</span>
               </p>
-              <p className="mt-1 text-xs text-slate-500">Minimum 8 characters</p>
+              {/* ✅ Red color for minimum characters */}
+              <p className="mt-1 text-xs text-red-600 font-medium">Minimum 8 characters</p>
             </div>
 
             {/* Confirm Password */}
@@ -496,7 +490,7 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Address with Map Button Always Visible */}
+            {/* Address with red "Click on map to select location" */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Address (Optional)
@@ -556,6 +550,8 @@ export default function RegisterPage() {
                   </a>
                 )}
               </div>
+              {/* ✅ Red color for "Click on map to select location" */}
+              <p className="mt-1 text-xs text-red-600 font-medium">📍 Click on map to select location</p>
             </div>
 
             {/* About */}
