@@ -137,7 +137,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* FEATURED CREATORS */}
+      {/* FEATURED CREATORS WITH CALL & WHATSAPP BUTTONS */}
       <section className="bg-slate-50 py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex items-center justify-between">
@@ -174,9 +174,30 @@ export default async function Home() {
                   {provider.experience && (
                     <p className="mt-2 leading-7 text-slate-600">⭐ {provider.experience} Years Experience</p>
                   )}
+
+                  {/* ACTION BUTTONS - Call & WhatsApp on card */}
+                  <div className="mt-4 flex gap-2">
+                    <a
+                      href={`tel:${provider.phone}`}
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                    >
+                      <Phone size={16} />
+                      Call
+                    </a>
+                    <a
+                      href={`https://wa.me/${provider.whatsapp || provider.phone}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                    >
+                      <MessageCircle size={16} />
+                      WhatsApp
+                    </a>
+                  </div>
+
                   <Link
                     href={`/providers/${provider.id}`}
-                    className="mt-6 block rounded-2xl bg-blue-600 py-3 text-center font-semibold text-white transition hover:bg-blue-700"
+                    className="mt-3 block rounded-2xl bg-purple-600 hover:bg-purple-700 py-2.5 text-center font-semibold text-white transition-all duration-200 hover:shadow-md"
                   >
                     View Profile
                   </Link>
@@ -232,7 +253,6 @@ export default async function Home() {
           </p>
 
           <div className="mt-14 grid gap-8 md:grid-cols-3">
-            {/* Step 1 */}
             <div className="group rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
               <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">1</div>
               <div className="text-5xl transition duration-300 group-hover:scale-110">🔍</div>
@@ -240,7 +260,6 @@ export default async function Home() {
               <p className="mt-4 leading-7 text-slate-600">Find photographers, videographers and editors near you.</p>
             </div>
 
-            {/* Step 2 */}
             <div className="group rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
               <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">2</div>
               <div className="text-5xl transition duration-300 group-hover:scale-110">📞</div>
@@ -248,7 +267,6 @@ export default async function Home() {
               <p className="mt-4 leading-7 text-slate-600">Contact creators directly through WhatsApp or phone calls.</p>
             </div>
 
-            {/* Step 3 */}
             <div className="group rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm transition-all duration-300 hover:-translate-y-2 hover:border-blue-500 hover:shadow-xl">
               <div className="mx-auto mb-6 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">3</div>
               <div className="text-5xl transition duration-300 group-hover:scale-110">🎬</div>
