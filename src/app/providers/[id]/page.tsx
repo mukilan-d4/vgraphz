@@ -46,6 +46,7 @@ export default function ProviderDetailPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [reviewText, setReviewText] = useState("");
+  const [reviewerName, setReviewerName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -119,16 +120,16 @@ export default function ProviderDetailPage() {
   const languages = convertArray(provider?.languages);
 
   async function handleSubmitReview() {
-    if (!currentUser) {
-      setError("Please login to leave a review");
-      return;
-    }
     if (isOwnProfile) {
       setError("You cannot review your own profile");
       return;
     }
     if (!reviewText.trim()) {
       setError("Please write a review");
+      return;
+    }
+    if (!reviewerName.trim()) {
+      setError("Please enter your name");
       return;
     }
 
@@ -138,7 +139,8 @@ export default function ProviderDetailPage() {
         .from("reviews")
         .insert({
           provider_id: Number(providerId),
-          rater_id: currentUser.id,
+          rater_id: currentUser?.id || null,
+          rater_name: reviewerName.trim(),
           review: reviewText.trim()
         })
         .select()
@@ -149,6 +151,7 @@ export default function ProviderDetailPage() {
       setReviews([data, ...reviews]);
       setReviewCount(reviewCount + 1);
       setReviewText("");
+      setReviewerName("");
       setSuccess("Review submitted successfully");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
@@ -523,14 +526,22 @@ export default function ProviderDetailPage() {
           </div>
         </div>
 
-        {/* REVIEWS SECTION */}
+        {/* REVIEWS SECTION - Anyone can review */}
         <div className="mt-6 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           <h2 className="text-xl font-bold text-slate-900">
             Reviews ({reviewCount})
           </h2>
 
-          {currentUser && !isOwnProfile && (
+          {!isOwnProfile && (
             <div className="mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <input
+                  placeholder="Your Name *"
+                  value={reviewerName}
+                  onChange={(e) => setReviewerName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                />
+              </div>
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
@@ -550,15 +561,9 @@ export default function ProviderDetailPage() {
             </div>
           )}
 
-          {currentUser && isOwnProfile && (
+          {isOwnProfile && (
             <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-700 text-sm">
               You cannot review your own profile
-            </div>
-          )}
-
-          {!currentUser && (
-            <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-500 text-sm">
-              Please login to leave a review
             </div>
           )}
 
@@ -573,7 +578,7 @@ export default function ProviderDetailPage() {
                       <User size={16} className="text-blue-600" />
                     </div>
                     <span className="font-semibold text-slate-900 text-sm">
-                      {review.rater_id === currentUser?.id ? "You" : "User"}
+                      {review.rater_name || "User"}
                     </span>
                     <span className="text-xs text-slate-400">
                       {new Date(review.created_at).toLocaleDateString()}
