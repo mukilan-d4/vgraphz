@@ -31,7 +31,6 @@ interface Review {
   id: string;
   provider_id: number;
   rater_id: string;
-  rater_name?: string;
   review: string;
   created_at: string;
 }
@@ -47,7 +46,6 @@ export default function ProviderDetailPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [reviewText, setReviewText] = useState("");
-  const [reviewerName, setReviewerName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -129,10 +127,6 @@ export default function ProviderDetailPage() {
       setError("Please write a review");
       return;
     }
-    if (!reviewerName.trim()) {
-      setError("Please enter your name");
-      return;
-    }
 
     try {
       setSubmitting(true);
@@ -141,7 +135,6 @@ export default function ProviderDetailPage() {
         .insert({
           provider_id: Number(providerId),
           rater_id: currentUser?.id || null,
-          rater_name: reviewerName.trim(),
           review: reviewText.trim()
         })
         .select()
@@ -152,7 +145,6 @@ export default function ProviderDetailPage() {
       setReviews([data, ...reviews]);
       setReviewCount(reviewCount + 1);
       setReviewText("");
-      setReviewerName("");
       setSuccess("Review submitted successfully");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
@@ -527,7 +519,7 @@ export default function ProviderDetailPage() {
           </div>
         </div>
 
-        {/* REVIEWS SECTION - Anyone can review */}
+        {/* REVIEWS SECTION - No login, no name required */}
         <div className="mt-6 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           <h2 className="text-xl font-bold text-slate-900">
             Reviews ({reviewCount})
@@ -535,14 +527,6 @@ export default function ProviderDetailPage() {
 
           {!isOwnProfile && (
             <div className="mt-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
-                <input
-                  placeholder="Your Name *"
-                  value={reviewerName}
-                  onChange={(e) => setReviewerName(e.target.value)}
-                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                />
-              </div>
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
@@ -579,7 +563,7 @@ export default function ProviderDetailPage() {
                       <User size={16} className="text-blue-600" />
                     </div>
                     <span className="font-semibold text-slate-900 text-sm">
-                      {review.rater_name || "User"}
+                      {review.rater_id === currentUser?.id ? "You" : "User"}
                     </span>
                     <span className="text-xs text-slate-400">
                       {new Date(review.created_at).toLocaleDateString()}
