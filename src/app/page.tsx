@@ -3,33 +3,16 @@
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import SearchProviders from "@/components/SearchProviders";
-import { Phone, MessageCircle, Globe, FolderOpen, ArrowUp } from "lucide-react";
+import { Phone, MessageCircle, Globe, FolderOpen } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function Home() {
-  // State for back to top button
-  const [showBackToTop, setShowBackToTop] = useState(false);
-
   // Get approved creators/providers
   const [providers, setProviders] = useState<any[]>([]);
   const [verifiedProviders, setVerifiedProviders] = useState(0);
   const [citiesCovered, setCitiesCovered] = useState(0);
   const [categoriesCount, setCategoriesCount] = useState(0);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Handle scroll to show/hide back to top button
-    const handleScroll = () => {
-      if (window.scrollY > 300) {
-        setShowBackToTop(true);
-      } else {
-        setShowBackToTop(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   // Load data
   useEffect(() => {
@@ -73,11 +56,6 @@ export default function Home() {
     loadData();
   }, []);
 
-  // Scroll to top function
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   // Helper to check if provider has any online presence
   const hasOnlinePresence = (provider: any) => {
     return provider.website || provider.instagram || provider.youtube || provider.portfolio;
@@ -108,7 +86,7 @@ export default function Home() {
     <main className="min-h-screen bg-slate-50">
 
       {/* HERO */}
-      <section className="bg-white py-24 md:py-32" id="top">
+      <section className="bg-white py-24 md:py-32">
         <div className="mx-auto max-w-7xl px-6 text-center">
 
           <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-semibold text-blue-700">
@@ -413,17 +391,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* BACK TO TOP BUTTON */}
-      {showBackToTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-8 right-8 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl group"
-          aria-label="Back to top"
-        >
-          <ArrowUp size={24} className="group-hover:animate-bounce" />
-        </button>
-      )}
 
     </main>
   );
