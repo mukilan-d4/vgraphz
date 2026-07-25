@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function Navbar() {
@@ -14,7 +14,6 @@ export default function Navbar() {
     };
     getUser();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
@@ -28,17 +27,17 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           
           {/* Logo */}
-          <Link href="/" className="text-xl font-bold text-slate-900">
+          <Link href="/" className="text-2xl font-bold text-slate-900">
             VgraphZ
           </Link>
 
-          {/* Center Navigation */}
+          {/* Center Navigation - Hidden on mobile */}
           <div className="hidden md:flex items-center gap-6">
             <Link href="/providers" className="text-slate-600 hover:text-blue-600 transition">
               Providers
             </Link>
             <Link href="/join-provider" className="text-slate-600 hover:text-blue-600 transition">
-              Join
+              Join Now
             </Link>
           </div>
 
@@ -53,17 +52,19 @@ export default function Navbar() {
               </Link>
             ) : (
               <>
+                {/* Login - Just text, no background */}
                 <Link
                   href="/login"
                   className="text-sm text-slate-600 hover:text-blue-600 transition"
                 >
                   Login
                 </Link>
+                {/* Join Now - Highlighted button */}
                 <Link
                   href="/register"
                   className="rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition"
                 >
-                  Register
+                  Join Now
                 </Link>
               </>
             )}
