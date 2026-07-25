@@ -1,15 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
-const supabaseUrl = 'https://offkbadcdznlsyazwvjq.supabase.co';
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mZmtiYWRjZHpubHN5YXp3dmpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0ODMyNDksImV4cCI6MjEwMDA1OTI0OX0.JgA1ssTRydtxNrmaEaoOPBdLcHF_EAoY-_0ooTX7vsc';
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// All Tamil Nadu Districts
+const TAMIL_NADU_DISTRICTS = [
+  "Ariyalur", "Chengalpattu", "Chennai", "Coimbatore", "Cuddalore",
+  "Dharmapuri", "Dindigul", "Erode", "Kallakurichi", "Kancheepuram",
+  "Karur", "Krishnagiri", "Madurai", "Mayiladuthurai", "Nagapattinam",
+  "Namakkal", "Nilgiris", "Perambalur", "Pudukkottai", "Ramanathapuram",
+  "Ranipet", "Salem", "Sivaganga", "Tenkasi", "Thanjavur", "Theni",
+  "Thoothukudi", "Tiruchirappalli", "Tirunelveli", "Tirupathur",
+  "Tiruppur", "Tiruvallur", "Tiruvannamalai", "Tiruvarur", "Vellore",
+  "Viluppuram", "Virudhunagar"
+];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,128 +26,93 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [category, setCategory] = useState("");
+  const [district, setDistrict] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [userType, setUserType] = useState("customer");
+  const [loading, setLoading] = useState(false);
 
   async function register(e: React.FormEvent) {
     e.preventDefault();
+    setLoading(true);
+    setError("");
 
-    if (!name.trim()) {
-      setError("Please enter your full name");
-      return;
-    }
-    if (!email.trim()) {
-      setError("Please enter your email address");
-      return;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters");
-      return;
-    }
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      setLoading(false);
       return;
     }
 
-    try {
-      setLoading(true);
-      setError("");
-      setSuccess("");
+    if (password.length < 6) {
+      setError("Password must contain at least 6 characters.");
+      setLoading(false);
+      return;
+    }
 
-      console.log("📝 Registering:", email);
-
-      // Sign up the user
-      const { data, error: signupError } = await supabase.auth.signUp({
-        email: email.trim().toLowerCase(),
-        password,
-        options: {
-          data: {
-            full_name: name.trim(),
-            user_type: userType,
-          },
+    const { data, error: signupError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name,
+          phone: phone,
         },
+      },
+    });
+
+    const user = data.user;
+
+    if (signupError) {
+      if (signupError.message.toLowerCase().includes("already")) {
+        setError("This email is already registered.");
+      } else {
+        setError(signupError.message);
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
+      setError("User creation failed");
+      setLoading(false);
+      return;
+    }
+
+    const { error: profileError } = await supabase
+      .from("videographers")
+      .insert({
+        user_id: user.id,
+        name,
+        email,
+        phone,
+        category,
+        district,
+        status: "pending",
+        approved: false
       });
 
-      if (signupError) {
-        console.error("❌ Signup error:", signupError);
-        setError(signupError.message || "Registration failed");
-        return;
-      }
-
-      if (!data.user) {
-        setError("Registration failed");
-        return;
-      }
-
-      console.log("✅ User created:", data.user.id);
-
-      // Create profile with retry
-      let profileCreated = false;
-      let retryCount = 0;
-      const maxRetries = 3;
-
-      while (!profileCreated && retryCount < maxRetries) {
-        try {
-          console.log(`📝 Attempting to create profile (attempt ${retryCount + 1})...`);
-          
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .insert([
-              {
-                id: data.user.id,
-                full_name: name.trim(),
-                email: email.trim().toLowerCase(),
-                role: userType === "provider" ? "provider" : "customer",
-              },
-            ]);
-
-          if (profileError) {
-            console.error(`❌ Profile error (attempt ${retryCount + 1}):`, profileError);
-            retryCount++;
-            if (retryCount < maxRetries) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-          } else {
-            console.log("✅ Profile created successfully");
-            profileCreated = true;
-          }
-        } catch (profileErr) {
-          console.error(`❌ Profile exception (attempt ${retryCount + 1}):`, profileErr);
-          retryCount++;
-          if (retryCount < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
-        }
-      }
-
-      if (!profileCreated) {
-        console.warn("⚠️ Profile creation failed after retries, but user is created");
-        // Don't stop - user is already created
-      }
-
-      setSuccess("Account created successfully! Please check your email to verify.");
-      setTimeout(() => router.push("/login"), 3000);
-
-    } catch (err: any) {
-      console.error("💥 Error:", err);
-      setError(err.message || "Something went wrong");
-    } finally {
+    if (profileError) {
+      setError(profileError.message);
       setLoading(false);
+      return;
     }
+
+    router.push("/login?registered=true");
   }
 
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-md">
+        
+        {/* Logo/Brand */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-slate-900">VgraphZ</h1>
-          <p className="text-slate-600 mt-1">Create your account</p>
+          <p className="text-slate-600 mt-1">Create your creator account</p>
         </div>
 
+        {/* Register Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
-          <form onSubmit={register} className="space-y-5">
+          <form onSubmit={register} className="space-y-4">
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Full Name *
@@ -170,93 +142,111 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold mb-2">
                 Password *
               </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-12 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                  placeholder="Create a password"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
                   required
-                  minLength={6}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600 transition"
+                  className="absolute inset-y-0 right-0 flex items-center px-4 z-20 text-slate-400 hover:text-blue-600 transition"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <p className="text-xs text-slate-400 mt-1">Minimum 6 characters</p>
+              <p className="mt-1 text-xs text-slate-500">Minimum 6 characters</p>
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label className="block text-sm font-semibold mb-2">
                 Confirm Password *
               </label>
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  placeholder="Confirm your password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 pr-12 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                  placeholder="Confirm your password"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600 transition"
+                  className="absolute inset-y-0 right-0 flex items-center px-4 z-20 text-slate-400 hover:text-blue-600 transition"
                 >
                   {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+              {confirmPassword && (
+                <p className={`mt-2 text-sm ${password === confirmPassword ? "text-green-600" : "text-red-600"}`}>
+                  {password === confirmPassword ? "✓ Passwords Match" : "✗ Passwords Do Not Match"}
+                </p>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                I want to
+                Phone Number *
               </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setUserType("customer")}
-                  className={`rounded-2xl border-2 px-4 py-3 text-sm font-semibold transition ${
-                    userType === "customer"
-                      ? "border-blue-600 bg-blue-50 text-blue-600"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-200"
-                  }`}
-                >
-                  Find Services
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUserType("provider")}
-                  className={`rounded-2xl border-2 px-4 py-3 text-sm font-semibold transition ${
-                    userType === "provider"
-                      ? "border-blue-600 bg-blue-50 text-blue-600"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-200"
-                  }`}
-                >
-                  Offer Services
-                </button>
-              </div>
+              <input
+                type="tel"
+                placeholder="Enter your phone number"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                required
+                minLength={10}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Category *
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                required
+              >
+                <option value="">Select your category</option>
+                <option value="Videographer">Videographer</option>
+                <option value="Photographer">Photographer</option>
+                <option value="Video Editor">Video Editor</option>
+                <option value="Photo Editor">Photo Editor</option>
+                <option value="Drone Pilot">Drone Pilot</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                District *
+              </label>
+              <select
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
+                required
+              >
+                <option value="">Select your district</option>
+                {TAMIL_NADU_DISTRICTS.map((d) => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
             </div>
 
             {error && (
               <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3">
                 <p className="text-red-600 text-sm font-medium">{error}</p>
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-green-50 border border-green-200 rounded-2xl px-4 py-3">
-                <p className="text-green-600 text-sm font-medium">{success}</p>
-                <p className="text-green-500 text-xs mt-1">Redirecting to login...</p>
               </div>
             )}
 
@@ -287,6 +277,7 @@ export default function RegisterPage() {
           </form>
         </div>
 
+        {/* Footer */}
         <p className="text-center text-xs text-slate-500 mt-6">
           By creating an account, you agree to our Terms of Service and Privacy Policy
         </p>
