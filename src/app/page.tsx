@@ -1,39 +1,82 @@
+"use client";
+
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import SearchProviders from "@/components/SearchProviders";
-import { Phone, MessageCircle, Globe, FolderOpen } from "lucide-react";
+import { Phone, MessageCircle, Globe, FolderOpen, ArrowUp } from "lucide-react";
+import { useState, useEffect } from "react";
 
-export default async function Home() {
+export default function Home() {
+  // State for back to top button
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
   // Get approved creators/providers
-  const { data: providers } = await supabase
-    .from("videographers")
-    .select("*")
-    .eq("status", "approved")
-    .eq("approved", true)
-    .limit(6);
+  const [providers, setProviders] = useState<any[]>([]);
+  const [verifiedProviders, setVerifiedProviders] = useState(0);
+  const [citiesCovered, setCitiesCovered] = useState(0);
+  const [categoriesCount, setCategoriesCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // Get live statistics
-  const { data: allApproved } = await supabase
-    .from("videographers")
-    .select("district, category")
-    .eq("status", "approved")
-    .eq("approved", true);
+  useEffect(() => {
+    // Handle scroll to show/hide back to top button
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+    };
 
-  const verifiedProviders = allApproved?.length || 0;
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
-  // Count districts
-  const cities = new Set();
-  allApproved?.forEach((p) => {
-    if (p.district) cities.add(p.district);
-  });
-  const citiesCovered = cities.size || 0;
+  // Load data
+  useEffect(() => {
+    async function loadData() {
+      // Get approved creators/providers
+      const { data: providersData } = await supabase
+        .from("videographers")
+        .select("*")
+        .eq("status", "approved")
+        .eq("approved", true)
+        .limit(6);
 
-  // Count categories
-  const categories = new Set();
-  allApproved?.forEach((p) => {
-    if (p.category) categories.add(p.category);
-  });
-  const categoriesCount = categories.size || 0;
+      setProviders(providersData || []);
+
+      // Get live statistics
+      const { data: allApproved } = await supabase
+        .from("videographers")
+        .select("district, category")
+        .eq("status", "approved")
+        .eq("approved", true);
+
+      setVerifiedProviders(allApproved?.length || 0);
+
+      // Count districts
+      const cities = new Set();
+      allApproved?.forEach((p) => {
+        if (p.district) cities.add(p.district);
+      });
+      setCitiesCovered(cities.size || 0);
+
+      // Count categories
+      const categories = new Set();
+      allApproved?.forEach((p) => {
+        if (p.category) categories.add(p.category);
+      });
+      setCategoriesCount(categories.size || 0);
+
+      setLoading(false);
+    }
+
+    loadData();
+  }, []);
+
+  // Scroll to top function
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Helper to check if provider has any online presence
   const hasOnlinePresence = (provider: any) => {
@@ -50,11 +93,22 @@ export default async function Home() {
     return links;
   };
 
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
+          <p className="mt-4 text-slate-600 font-medium">Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-50">
 
       {/* HERO */}
-      <section className="bg-white py-24 md:py-32">
+      <section className="bg-white py-24 md:py-32" id="top">
         <div className="mx-auto max-w-7xl px-6 text-center">
 
           <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-sm font-semibold text-blue-700">
@@ -198,7 +252,7 @@ export default async function Home() {
                       <p className="mt-2 leading-7 text-slate-600">⭐ {provider.experience} Years Experience</p>
                     )}
 
-                    {/* Online Presence Links - Only show if provider has any */}
+                    {/* Online Presence Links */}
                     {hasLinks && (
                       <div className="mt-4">
                         <p className="text-xs font-semibold text-slate-500 mb-2">🔗 Online Presence</p>
@@ -230,7 +284,7 @@ export default async function Home() {
                     {/* Spacer to push buttons to bottom */}
                     <div className="flex-1"></div>
 
-                    {/* ACTION BUTTONS - Always at bottom, equal alignment */}
+                    {/* ACTION BUTTONS */}
                     <div className="mt-4 flex gap-2">
                       <a
                         href={`tel:${provider.phone}`}
@@ -250,7 +304,7 @@ export default async function Home() {
                       </a>
                     </div>
 
-                    {/* View Profile Button - Full width, always at bottom */}
+                    {/* View Profile Button */}
                     <Link
                       href={`/providers/${provider.id}`}
                       className="mt-3 block w-full rounded-2xl bg-purple-600 hover:bg-blue-600 py-2.5 text-center font-semibold text-white transition-all duration-300 hover:shadow-md hover:scale-[1.02]"
@@ -359,6 +413,18 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* BACK TO TOP BUTTON */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:scale-110 hover:shadow-xl group"
+          aria-label="Back to top"
+        >
+          <ArrowUp size={24} className="group-hover:animate-bounce" />
+        </button>
+      )}
+
     </main>
   );
 }
