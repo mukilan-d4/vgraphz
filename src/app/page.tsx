@@ -193,6 +193,7 @@ export default function Home() {
               const onlineLinks = getOnlineLinks(provider);
               const hasLinks = onlineLinks.length > 0;
               const directionsLink = getDirectionsLink(provider.address);
+              const hasAddress = provider.address && provider.address.trim().length > 0;
 
               return (
                 <div
@@ -245,37 +246,55 @@ export default function Home() {
 
                     <div className="flex-1"></div>
 
-                    {/* Action Buttons - Call, WhatsApp, Direction */}
-                    <div className="mt-4 grid grid-cols-3 gap-2">
-                      <a
-                        href={`tel:${provider.phone}`}
-                        className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
-                      >
-                        <Phone size={16} className="shrink-0" />
-                        <span className="hidden sm:inline">Call</span>
-                      </a>
-                      <a
-                        href={`https://wa.me/${provider.whatsapp || provider.phone}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
-                      >
-                        <MessageCircle size={16} className="shrink-0" />
-                        <span className="hidden sm:inline">WhatsApp</span>
-                      </a>
-                      <a
-                        href={directionsLink || `https://www.google.com/maps`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`flex items-center justify-center gap-1.5 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95 ${
-                          directionsLink ? "bg-amber-600 hover:bg-amber-700" : "bg-slate-400 hover:bg-slate-500 cursor-not-allowed"
-                        }`}
-                        title={directionsLink ? "Get Directions" : "No address available"}
-                      >
-                        <Navigation size={16} className="shrink-0" />
-                        <span className="hidden sm:inline">Direction</span>
-                      </a>
-                    </div>
+                    {/* Action Buttons - Direction only shows if address exists */}
+                    {hasAddress ? (
+                      <div className="mt-4 grid grid-cols-3 gap-2">
+                        <a
+                          href={`tel:${provider.phone}`}
+                          className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
+                        >
+                          <Phone size={16} className="shrink-0" />
+                          <span className="hidden sm:inline">Call</span>
+                        </a>
+                        <a
+                          href={`https://wa.me/${provider.whatsapp || provider.phone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
+                        >
+                          <MessageCircle size={16} className="shrink-0" />
+                          <span className="hidden sm:inline">WhatsApp</span>
+                        </a>
+                        <a
+                          href={directionsLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
+                        >
+                          <Navigation size={16} className="shrink-0" />
+                          <span className="hidden sm:inline">Direction</span>
+                        </a>
+                      </div>
+                    ) : (
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <a
+                          href={`tel:${provider.phone}`}
+                          className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
+                        >
+                          <Phone size={16} className="shrink-0" />
+                          <span className="hidden sm:inline">Call</span>
+                        </a>
+                        <a
+                          href={`https://wa.me/${provider.whatsapp || provider.phone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold py-2.5 md:py-3 rounded-xl transition-all duration-200 hover:shadow-md active:scale-95"
+                        >
+                          <MessageCircle size={16} className="shrink-0" />
+                          <span className="hidden sm:inline">WhatsApp</span>
+                        </a>
+                      </div>
+                    )}
 
                     <Link
                       href={`/providers/${provider.id}`}
