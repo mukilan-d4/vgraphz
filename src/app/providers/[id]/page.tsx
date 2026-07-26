@@ -31,6 +31,7 @@ interface Review {
   id: string;
   provider_id: number;
   rater_id: string;
+  rater_name?: string;
   review: string;
   created_at: string;
 }
@@ -46,6 +47,7 @@ export default function ProviderDetailPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [reviewText, setReviewText] = useState("");
+  const [reviewerName, setReviewerName] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -61,6 +63,16 @@ export default function ProviderDetailPage() {
   const [enquiryError, setEnquiryError] = useState("");
   
   const [showComments, setShowComments] = useState(true);
+
+  // Generate a simple session ID for non-logged-in users
+  const getSessionId = () => {
+    let sessionId = localStorage.getItem('review_session_id');
+    if (!sessionId) {
+      sessionId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
+      localStorage.setItem('review_session_id', sessionId);
+    }
+    return sessionId;
+  };
 
   useEffect(() => {
     loadData();
@@ -132,12 +144,18 @@ export default function ProviderDetailPage() {
 
     try {
       setSubmitting(true);
+      
+      // Get session ID for non-logged-in users
+      const sessionId = getSessionId();
+      
       const { data, error } = await supabase
         .from("reviews")
         .insert({
           provider_id: Number(providerId),
           rater_id: currentUser?.id || null,
-          review: reviewText.trim()
+          rater_name: reviewerName.trim() || "User",
+          review: reviewText.trim(),
+          session_id: currentUser?.id ? null : sessionId
         })
         .select()
         .single();
@@ -147,6 +165,7 @@ export default function ProviderDetailPage() {
       setReviews([data, ...reviews]);
       setReviewCount(reviewCount + 1);
       setReviewText("");
+      setReviewerName("");
       setSuccess("Review submitted successfully");
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
@@ -156,53 +175,91 @@ export default function ProviderDetailPage() {
     }
   }
 
+  // Check if current user is the author of a review
+  const isReviewAuthor = (review: Review) => {
+    if (currentUser && review.rater_id === currentUser.id) {
+      return true;
+    }
+    // For non-logged-in users, check session ID
+    const sessionId = localStorage.getItem('review_session_id');
+    // You would need to store session_id in the database too
+    // For now, this will work for logged-in users
+    return false;
+  };
+
   function startEditing(review: Review) {
     setEditingReviewId(review.id);
     setEditingReviewText(review.review);
   }
 
   async function handleEditReview(id: string) {
-    if (!editingReviewText.trim()) return;
-    const { error } = await supabase
-      .from("reviews")
-      .update({
-        review: editingReviewText.trim()
-      })
-      .eq("id", id);
-
-    if (error) {
-      setError(error.message);
+    if (!editingReviewText.trim()) {
+      setError("Review cannot be empty");
       return;
     }
 
-    setReviews(
-      reviews.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              review: editingReviewText.trim()
-            }
-          : r
-      )
-    );
-    setEditingReviewId(null);
-    setEditingReviewText("");
+    try {
+      setSubmitting(true);
+      const { error } = await supabase
+        .from("reviews")
+        .update({
+          review: editingReviewText.trim()
+        })
+        .eq("id", id);
+
+      if (error) {
+        setError(error.message);
+        setSubmitting(false);
+        return;
+      }
+
+      setReviews(
+        reviews.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                review: editingReviewText.trim()
+              }
+            : r
+        )
+      );
+      setEditingReviewId(null);
+      setEditingReviewText("");
+      setSuccess("Review updated successfully");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleDeleteReview(id: string) {
     const ok = confirm("Delete this review?");
     if (!ok) return;
-    const { error } = await supabase
-      .from("reviews")
-      .delete()
-      .eq("id", id);
 
-    if (error) {
-      setError(error.message);
-      return;
+    try {
+      setSubmitting(true);
+      const { error } = await supabase
+        .from("reviews")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        setError(error.message);
+        setSubmitting(false);
+        return;
+      }
+
+      setReviews(reviews.filter((r) => r.id !== id));
+      setReviewCount(reviewCount - 1);
+      setSuccess("Review deleted successfully");
+      setTimeout(() => setSuccess(""), 3000);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSubmitting(false);
     }
-    setReviews(reviews.filter((r) => r.id !== id));
-    setReviewCount(reviewCount - 1);
   }
 
   async function handleEnquirySubmit(e: React.FormEvent) {
@@ -354,7 +411,7 @@ export default function ProviderDetailPage() {
               </button>
             </div>
 
-            {/* ✅ Enquiry Form - Only show if NOT the profile owner */}
+            {/* Enquiry Form - Only show if NOT the profile owner */}
             {!isOwnProfile && showEnquiryForm && (
               <form
                 onSubmit={handleEnquirySubmit}
@@ -522,7 +579,7 @@ export default function ProviderDetailPage() {
           </div>
         </div>
 
-        {/* REVIEWS SECTION */}
+        {/* REVIEWS SECTION - Open to everyone */}
         <div className="mt-6 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-slate-900">
@@ -543,9 +600,17 @@ export default function ProviderDetailPage() {
             </button>
           </div>
 
-          {/* Write Review - Always Visible */}
+          {/* ✅ Write Review - Visible to everyone EXCEPT the profile owner */}
           {!isOwnProfile && (
             <div className="mt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                <input
+                  placeholder="Your Name (optional)"
+                  value={reviewerName}
+                  onChange={(e) => setReviewerName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                />
+              </div>
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
@@ -571,12 +636,6 @@ export default function ProviderDetailPage() {
             </div>
           )}
 
-          {!currentUser && !isOwnProfile && (
-            <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-500 text-sm">
-              Please login to leave a review
-            </div>
-          )}
-
           {/* Comments */}
           {showComments && (
             <div className="mt-6 space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
@@ -590,12 +649,12 @@ export default function ProviderDetailPage() {
                         <User size={16} className="text-blue-600" />
                       </div>
                       <span className="font-semibold text-slate-900 text-sm">
-                        {review.rater_id === currentUser?.id ? "You" : "User"}
+                        {review.rater_name || "User"}
                       </span>
                       <span className="text-xs text-slate-400">
                         {new Date(review.created_at).toLocaleDateString()}
                       </span>
-                      {review.rater_id === currentUser?.id && (
+                      {currentUser && review.rater_id === currentUser.id && (
                         <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
                           Your Review
                         </span>
@@ -613,6 +672,7 @@ export default function ProviderDetailPage() {
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => handleEditReview(review.id)}
+                            disabled={submitting}
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
                           >
                             <Check size={14} className="inline mr-1" /> Save
@@ -628,7 +688,8 @@ export default function ProviderDetailPage() {
                     ) : (
                       <>
                         <p className="mt-2 text-slate-700 text-sm">{review.review}</p>
-                        {review.rater_id === currentUser?.id && (
+                        {/* ✅ Show Edit/Delete for logged-in users who wrote the review */}
+                        {currentUser && review.rater_id === currentUser.id && (
                           <div className="flex gap-4 mt-2">
                             <button
                               onClick={() => startEditing(review)}
