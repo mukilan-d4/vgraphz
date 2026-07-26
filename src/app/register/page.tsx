@@ -156,9 +156,12 @@ export default function RegisterPage() {
     return null;
   };
 
+  // ✅ Fixed password strength check with colors
   function checkStrength(value: string) {
     setPassword(value);
     let strength = "Weak";
+    let color = "text-red-600";
+    
     if (
       value.length >= 8 &&
       /[A-Z]/.test(value) &&
@@ -167,10 +170,19 @@ export default function RegisterPage() {
       /[^A-Za-z0-9]/.test(value)
     ) {
       strength = "Strong";
-    } else if (value.length >= 6 && /[A-Z]/.test(value) && /[a-z]/.test(value) && /[0-9]/.test(value)) {
+      color = "text-green-600";
+    } else if (
+      value.length >= 6 &&
+      /[A-Z]/.test(value) &&
+      /[a-z]/.test(value) &&
+      /[0-9]/.test(value)
+    ) {
       strength = "Medium";
+      color = "text-yellow-600";
     }
+    
     setPasswordStrength(strength);
+    return color;
   }
 
   async function register(e: React.FormEvent) {
@@ -268,6 +280,13 @@ export default function RegisterPage() {
   const remainingChars = MAX_ADDRESS_LENGTH - addressLength;
   const hasAddress = address.trim().length > 0;
 
+  // Get password strength color
+  const getStrengthColor = () => {
+    if (passwordStrength === "Strong") return "text-green-600";
+    if (passwordStrength === "Medium") return "text-yellow-600";
+    return "text-red-600";
+  };
+
   return (
     <main className="min-h-screen bg-slate-50 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg">
@@ -348,7 +367,11 @@ export default function RegisterPage() {
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(e) => checkStrength(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setPassword(value);
+                    checkStrength(value);
+                  }}
                   placeholder="Create a password"
                   className="w-full rounded-2xl border border-slate-200 px-4 py-3 pr-12 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
                   required
@@ -362,16 +385,19 @@ export default function RegisterPage() {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              <p className="mt-2 text-sm">
-                Strength : <span className={
-                  passwordStrength === "Weak" ? "text-red-600" :
-                  passwordStrength === "Medium" ? "text-yellow-600" :
-                  "text-green-600"
-                }>{passwordStrength}</span>
-              </p>
-              <p className="mt-1 text-xs text-red-600 font-medium">
-                Minimum 8 characters
-              </p>
+              {password.length > 0 && (
+                <>
+                  <p className="mt-2 text-sm">
+                    Strength : <span className={getStrengthColor()}>{passwordStrength}</span>
+                  </p>
+                  {/* ✅ Show only if password is less than 8 characters */}
+                  {password.length < 8 && (
+                    <p className="mt-1 text-xs text-red-600 font-medium">
+                      Minimum 8 characters ({password.length}/8)
+                    </p>
+                  )}
+                </>
+              )}
             </div>
 
             {/* Confirm Password */}
