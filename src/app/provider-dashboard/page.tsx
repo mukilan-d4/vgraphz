@@ -7,10 +7,10 @@ import Link from "next/link";
 interface Enquiry {
   id: number;
   provider_id: number;
-  customer_name: string;
-  customer_phone: string;
+  name: string;
+  phone: string;
   event_type: string | null;
-  message: string | null;
+  requirements: string | null;
   status: string | null;
   created_at: string;
 }
@@ -76,7 +76,25 @@ export default function ProviderDashboard() {
       .order("created_at", { ascending: false });
 
     setEnquiries(enquiryData || []);
+
+    // Mark new enquiries as read
+    if (providerData) {
+      await markEnquiriesAsRead(providerData.id);
+    }
+
     setLoading(false);
+  }
+
+  async function markEnquiriesAsRead(providerId: number) {
+    try {
+      await supabase
+        .from("enquiries")
+        .update({ status: 'read' })
+        .eq("provider_id", providerId)
+        .eq("status", "new");
+    } catch (error) {
+      console.error("Error marking enquiries as read:", error);
+    }
   }
 
   async function handleChangePassword(e: React.FormEvent) {
@@ -123,11 +141,11 @@ export default function ProviderDashboard() {
   };
 
   const groupedEnquiries = enquiries.reduce<Record<string, GroupedEnquiry>>((acc, enquiry) => {
-    const key = `${enquiry.customer_name}_${enquiry.customer_phone}`;
+    const key = `${enquiry.name}_${enquiry.phone}`;
     if (!acc[key]) {
       acc[key] = {
-        customer_name: enquiry.customer_name,
-        customer_phone: enquiry.customer_phone,
+        customer_name: enquiry.name,
+        customer_phone: enquiry.phone,
         messages: [],
         last_date: enquiry.created_at,
         all_read: true
@@ -144,22 +162,6 @@ export default function ProviderDashboard() {
   }, {});
 
   const groupedList: GroupedEnquiry[] = Object.values(groupedEnquiries);
-
-  const markAsRead = async (messages: Enquiry[]) => {
-    const unreadIds = messages.filter(m => m.status !== 'read').map(m => m.id);
-    if (unreadIds.length === 0) return;
-
-    try {
-      await supabase
-        .from("enquiries")
-        .update({ status: 'read' })
-        .in('id', unreadIds);
-      
-      loadDashboard();
-    } catch (error) {
-      console.error("Error marking as read:", error);
-    }
-  };
 
   if (loading) {
     return (
@@ -214,6 +216,7 @@ export default function ProviderDashboard() {
     <main className="min-h-screen bg-slate-50 py-12">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900">
@@ -240,6 +243,7 @@ export default function ProviderDashboard() {
           </div>
         </div>
 
+        {/* Change Password Form */}
         {showPasswordForm && (
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 mb-8">
             <h2 className="text-xl font-bold text-slate-900 mb-4">Change Password</h2>
@@ -307,6 +311,7 @@ export default function ProviderDashboard() {
           </div>
         )}
 
+        {/* Profile Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             <div className="h-24 w-24 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
@@ -384,6 +389,7 @@ export default function ProviderDashboard() {
           </div>
         </div>
 
+        {/* Total Leads Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 mb-8">
           <p className="text-sm font-medium text-slate-500">
             Total Leads
@@ -396,6 +402,7 @@ export default function ProviderDashboard() {
           </p>
         </div>
 
+        {/* Enquiries Section */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <div>
@@ -455,6 +462,7 @@ export default function ProviderDashboard() {
                         }`}
                       >
                         <div className="flex flex-col gap-3">
+                          {/* Customer Header */}
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-3">
                               <h3 className="text-lg font-bold text-slate-900">
@@ -476,21 +484,23 @@ export default function ProviderDashboard() {
                             )}
                           </div>
 
+                          {/* Phone */}
                           <p className="text-slate-600 flex items-center gap-2 text-sm">
                             <span className="text-slate-400">📞</span>
                             <span className="font-medium">{group.customer_phone}</span>
                           </p>
 
+                          {/* Message count */}
                           <p className="text-xs text-slate-400">
                             {group.messages.length} message{group.messages.length > 1 ? 's' : ''}
                           </p>
 
-                          {/* Show all messages */}
+                          {/* All Messages */}
                           <div className="space-y-2">
                             {group.messages.map((msg, idx) => (
                               <div key={idx} className="bg-white rounded-xl px-4 py-3 border border-slate-200">
                                 <p className="text-slate-700 text-sm whitespace-pre-wrap">
-                                  {msg.message || "No message provided"}
+                                  {msg.requirements || "No message provided"}
                                 </p>
                                 {msg.event_type && (
                                   <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
@@ -506,13 +516,17 @@ export default function ProviderDashboard() {
 
                           {hasUnreadInGroup && (
                             <button
-                              onClick={() => markAsRead(group.messages)}
+                              onClick={() => {
+                                markEnquiriesAsRead(provider.id);
+                                loadDashboard();
+                              }}
                               className="text-xs text-blue-600 hover:text-blue-700 font-medium self-start"
                             >
                               ✓ Mark as read
                             </button>
                           )}
 
+                          {/* Action Buttons */}
                           <div className="flex flex-row gap-3 mt-1">
                             <a
                               href={`tel:${group.customer_phone}`}
