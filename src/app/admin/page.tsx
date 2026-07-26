@@ -3,302 +3,303 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+
+interface Provider {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  category: string;
+  district: string;
+  status: string;
+  approved: boolean;
+  created_at: string;
+  profile_image?: string;
+  user_id?: string;
+}
 
 export default function AdminPage() {
+  const router = useRouter();
+  const [providers, setProviders] = useState<Provider[]>([]);
   const [loading, setLoading] = useState(true);
-  const [providers, setProviders] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("all");
-  const [actionMessage, setActionMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [processingId, setProcessingId] = useState<number | null>(null);
 
   useEffect(() => {
-    checkAdmin();
+    checkAdminAndLoad();
   }, []);
 
-  async function checkAdmin() {
-    const { data: { user: currentUser } } = await supabase.auth.getUser();
+  async function checkAdminAndLoad() {
+    try {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push("/login");
+        return;
+      }
 
-    if (!currentUser) {
-      window.location.href = "/login";
-      return;
+      // Check if user is admin (you can modify this check)
+      const { data: adminCheck } = await supabase
+        .from("admins")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!adminCheck) {
+        setIsAdmin(false);
+        setError("Unauthorized access");
+        setLoading(false);
+        return;
+      }
+
+      setIsAdmin(true);
+      await loadProviders();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load admin data");
+    } finally {
+      setLoading(false);
     }
-
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", currentUser.id)
-      .single();
-
-    if (profileError || profile?.role !== "admin") {
-      window.location.href = "/provider-dashboard";
-      return;
-    }
-
-    await loadProviders();
-    setLoading(false);
   }
 
   async function loadProviders() {
-    const { data } = await supabase
-      .from("videographers")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setProviders(data || []);
+    try {
+      const { data, error } = await supabase
+        .from("videographers")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setProviders(data || []);
+    } catch (err: any) {
+      console.error("Load providers error:", err);
+      setError(err.message);
+    }
   }
 
-  async function handleAction(providerId: number, action: 'approve' | 'reject' | 'delete') {
-    if (action === 'delete' && !confirm('Are you sure you want to delete this provider?')) {
-      return;
-    }
-
-    setActionMessage(null);
+  async function handleApprove(id: number) {
+    setProcessingId(id);
+    setError("");
+    setSuccess("");
 
     try {
-      const response = await fetch(`/api/admin/${action}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: providerId }),
-      });
+      const { error } = await supabase
+        .from("videographers")
+        .update({ 
+          status: "approved", 
+          approved: true 
+        })
+        .eq("id", id);
 
-      const result = await response.json();
+      if (error) throw error;
 
-      if (result.success) {
-        setActionMessage({ text: `Provider ${action}d successfully!`, type: 'success' });
-        await loadProviders();
-        // Clear message after 3 seconds
-        setTimeout(() => setActionMessage(null), 3000);
-      } else {
-        setActionMessage({ text: result.error || `Failed to ${action} provider`, type: 'error' });
-      }
-    } catch (error) {
-      setActionMessage({ text: `Error: ${error}`, type: 'error' });
+      setSuccess(`Provider approved successfully`);
+      await loadProviders();
+    } catch (err: any) {
+      console.error("Approve error:", err);
+      setError(err.message);
+    } finally {
+      setProcessingId(null);
     }
   }
 
-  const total = providers?.length || 0;
-  const approved = providers?.filter((item) => item.status === "approved").length || 0;
-  const pending = providers?.filter((item) => item.status === "pending").length || 0;
-  const rejected = providers?.filter((item) => item.status === "rejected").length || 0;
+  async function handleReject(id: number) {
+    setProcessingId(id);
+    setError("");
+    setSuccess("");
 
-  const getStatusBadge = (status: string) => {
-    const statusMap: Record<string, { bg: string; text: string; dot: string }> = {
-      approved: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
-      pending: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
-      rejected: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
-    };
-    return statusMap[status] || statusMap.pending;
-  };
+    try {
+      const { error } = await supabase
+        .from("videographers")
+        .update({ 
+          status: "rejected", 
+          approved: false 
+        })
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setSuccess(`Provider rejected`);
+      await loadProviders();
+    } catch (err: any) {
+      console.error("Reject error:", err);
+      setError(err.message);
+    } finally {
+      setProcessingId(null);
+    }
+  }
+
+  async function handleDelete(id: number) {
+    if (!confirm("Are you sure you want to delete this provider?")) return;
+
+    setProcessingId(id);
+    setError("");
+    setSuccess("");
+
+    try {
+      const { error } = await supabase
+        .from("videographers")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      setSuccess(`Provider deleted successfully`);
+      await loadProviders();
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      setError(err.message);
+    } finally {
+      setProcessingId(null);
+    }
+  }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-600 border-t-transparent"></div>
-          <p className="mt-4 text-slate-600 font-medium">Loading Admin Dashboard...</p>
+          <p className="mt-4 text-slate-600 font-medium">Loading...</p>
         </div>
-      </main>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-red-600">Unauthorized</h2>
+          <p className="mt-2 text-slate-600">You don't have permission to access this page</p>
+          <Link href="/" className="mt-4 inline-block text-blue-600 hover:text-blue-700">
+            Go Home
+          </Link>
+        </div>
+      </div>
     );
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 py-12">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-bold text-slate-900">
-              Admin Dashboard
-            </h1>
-            <p className="text-slate-600 mt-1">Manage providers and approvals</p>
-          </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              href="/admin/enquiries"
-              className="rounded-2xl bg-blue-600 hover:bg-blue-700 px-6 py-2.5 text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              View Enquiries
-            </Link>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut();
-                window.location.href = "/login";
-              }}
-              className="rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 px-6 py-2.5 text-slate-700 font-semibold transition-all duration-200 hover:shadow-md"
-            >
-              Logout
-            </button>
-          </div>
+    <div className="min-h-screen bg-slate-50 py-8">
+      <div className="max-w-7xl mx-auto px-4">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
+          <Link href="/" className="text-blue-600 hover:text-blue-700">
+            ← Back to Home
+          </Link>
         </div>
 
-        {/* Action Message */}
-        {actionMessage && (
-          <div className={`mb-6 rounded-2xl px-4 py-3 ${
-            actionMessage.type === 'success' 
-              ? 'bg-emerald-50 border border-emerald-200 text-emerald-700' 
-              : 'bg-red-50 border border-red-200 text-red-700'
-          }`}>
-            <p className="text-sm font-medium">{actionMessage.text}</p>
+        {error && (
+          <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-4 text-red-700">
+            {error}
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 mb-8">
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-            <p className="text-sm font-medium text-slate-500">Total Providers</p>
-            <p className="text-3xl font-bold text-slate-900 mt-1">{total}</p>
-          </div>
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-            <p className="text-sm font-medium text-slate-500">Approved</p>
-            <p className="text-3xl font-bold text-emerald-600 mt-1">{approved}</p>
-          </div>
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-            <p className="text-sm font-medium text-slate-500">Pending</p>
-            <p className="text-3xl font-bold text-amber-600 mt-1">{pending}</p>
-          </div>
-          <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
-            <p className="text-sm font-medium text-slate-500">Rejected</p>
-            <p className="text-3xl font-bold text-red-600 mt-1">{rejected}</p>
-          </div>
-        </div>
-
-        {/* Search & Filter */}
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Search Providers
-              </label>
-              <input
-                placeholder="Search by provider name..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Filter by Status
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition appearance-none"
-              >
-                <option value="all">All Providers</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Providers Grid */}
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">All Providers</h2>
-        
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {providers
-            .filter((provider) => {
-              const matchName = provider.name
-                .toLowerCase()
-                .includes(search.toLowerCase());
-              const matchStatus = status === "all" || provider.status === status;
-              return matchName && matchStatus;
-            })
-            .map((provider) => {
-              const statusBadge = getStatusBadge(provider.status);
-              return (
-                <div
-                  key={provider.id}
-                  className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-                >
-                  <div className="text-center">
-                    <img
-                      src={provider.profile_image || "/default-profile.png"}
-                      alt={provider.name}
-                      className="mx-auto h-28 w-28 rounded-2xl object-cover border-2 border-slate-200"
-                    />
-                    <h3 className="mt-4 text-xl font-bold text-slate-900">
-                      {provider.name}
-                    </h3>
-                    <p className="text-slate-600">{provider.category}</p>
-                    {provider.district && (
-                      <p className="text-slate-500 text-sm flex items-center justify-center gap-1 mt-1">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
-                        {provider.district}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-center">
-                    <span className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium ${statusBadge.bg} ${statusBadge.text}`}>
-                      <span className={`w-2 h-2 rounded-full ${statusBadge.dot}`}></span>
-                      {provider.status || "pending"}
-                    </span>
-                  </div>
-
-                  {/* ✅ Fixed: View Profile with correct URL */}
-                  <Link
-                    href={`/providers/${provider.id}`}
-                    target="_blank"
-                    className="mt-4 block rounded-2xl bg-blue-600 hover:bg-blue-700 py-3 text-center text-white font-semibold transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
-                  >
-                    View Profile
-                  </Link>
-
-                  {/* ✅ Fixed: Action Buttons */}
-                  <div className="mt-4 grid grid-cols-3 gap-2">
-                    <button
-                      onClick={() => handleAction(provider.id, 'approve')}
-                      className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 py-2.5 text-white font-semibold text-sm transition-all duration-200 hover:shadow-md"
-                    >
-                      Approve
-                    </button>
-
-                    <button
-                      onClick={() => handleAction(provider.id, 'reject')}
-                      className="w-full rounded-xl bg-red-600 hover:bg-red-700 py-2.5 text-white font-semibold text-sm transition-all duration-200 hover:shadow-md"
-                    >
-                      Reject
-                    </button>
-
-                    <button
-                      onClick={() => handleAction(provider.id, 'delete')}
-                      className="w-full rounded-xl bg-slate-600 hover:bg-slate-700 py-2.5 text-white font-semibold text-sm transition-all duration-200 hover:shadow-md"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-
-        {providers.filter((provider) => {
-          const matchName = provider.name.toLowerCase().includes(search.toLowerCase());
-          const matchStatus = status === "all" || provider.status === status;
-          return matchName && matchStatus;
-        }).length === 0 && (
-          <div className="text-center py-16">
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-12 max-w-md mx-auto">
-              <svg className="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-              <h3 className="text-lg font-semibold text-slate-700 mb-1">No providers found</h3>
-              <p className="text-slate-500">Try adjusting your search or filter</p>
-            </div>
+        {success && (
+          <div className="mb-4 bg-green-50 border border-green-200 rounded-xl p-4 text-green-700">
+            {success}
           </div>
         )}
+
+        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200">
+                <tr>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Provider</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Category</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Location</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Status</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-700">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {providers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                      No providers found
+                    </td>
+                  </tr>
+                ) : (
+                  providers.map((provider) => (
+                    <tr key={provider.id} className="border-b border-slate-100 hover:bg-slate-50 transition">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {provider.profile_image ? (
+                            <img 
+                              src={provider.profile_image} 
+                              alt={provider.name}
+                              className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                            />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                              {provider.name?.charAt(0)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-semibold text-slate-900">{provider.name}</p>
+                            <p className="text-xs text-slate-500">{provider.email}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
+                          {provider.category}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">{provider.district}</td>
+                      <td className="px-4 py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          provider.status === "approved" 
+                            ? "bg-green-50 text-green-700" 
+                            : provider.status === "rejected"
+                            ? "bg-red-50 text-red-700"
+                            : "bg-yellow-50 text-yellow-700"
+                        }`}>
+                          {provider.status || "pending"}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {provider.status !== "approved" && (
+                            <button
+                              onClick={() => handleApprove(provider.id)}
+                              disabled={processingId === provider.id}
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                            >
+                              {processingId === provider.id ? "..." : "Approve"}
+                            </button>
+                          )}
+                          {provider.status !== "rejected" && provider.status !== "approved" && (
+                            <button
+                              onClick={() => handleReject(provider.id)}
+                              disabled={processingId === provider.id}
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                            >
+                              {processingId === provider.id ? "..." : "Reject"}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleDelete(provider.id)}
+                            disabled={processingId === provider.id}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition disabled:opacity-50"
+                          >
+                            {processingId === provider.id ? "..." : "Delete"}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
-    </main>
+    </div>
   );
 }
