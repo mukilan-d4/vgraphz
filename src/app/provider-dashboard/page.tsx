@@ -65,7 +65,6 @@ export default function ProviderDashboard() {
     setLoading(false);
   }
 
-  // Change password function - NO EMAIL REQUIRED
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
     setPasswordMessage("");
@@ -104,7 +103,6 @@ export default function ProviderDashboard() {
     setUpdatingPassword(false);
   }
 
-  // Show loading state
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -116,7 +114,6 @@ export default function ProviderDashboard() {
     );
   }
 
-  // Show no profile state
   if (!provider) {
     return (
       <main className="min-h-screen bg-slate-50 py-12">
@@ -252,21 +249,21 @@ export default function ProviderDashboard() {
           </div>
         )}
 
-        {/* Profile Card */}
+        {/* Profile Card - No Image */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            <img
-              src={provider.profile_image || "/default-profile.png"}
-              alt={provider.name}
-              className="h-24 w-24 rounded-2xl object-cover border-2 border-slate-200"
-            />
+            {/* Profile Icon instead of image */}
+            <div className="h-24 w-24 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
+              <span className="text-3xl font-bold text-blue-600">
+                {provider.name?.charAt(0) || "U"}
+              </span>
+            </div>
             <div className="flex-1">
               <h2 className="text-2xl font-bold text-slate-900">
                 Welcome, {provider.name}! 👋
               </h2>
               <p className="text-slate-600">{provider.category}</p>
               <div className="flex flex-wrap items-center gap-3 mt-2">
-                {/* ✅ Updated Status Badge */}
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
                   provider.status === "approved" 
                     ? "bg-emerald-50 text-emerald-700" 
@@ -295,7 +292,6 @@ export default function ProviderDashboard() {
                   </span>
                 )}
               </div>
-              {/* ✅ Professional Pending Message */}
               {provider.status === "pending" && (
                 <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
                   <p className="text-sm text-amber-700 font-medium">
@@ -345,11 +341,11 @@ export default function ProviderDashboard() {
           </p>
         </div>
 
-        {/* Enquiries Section */}
+        {/* Enquiries Section - Show full details */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900">Customer Leads</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Customer Enquiries</h2>
               <p className="text-slate-500 text-sm">Contact customers directly by phone or WhatsApp</p>
             </div>
             <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-semibold">
@@ -367,7 +363,7 @@ export default function ProviderDashboard() {
                 <svg className="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
-                <h3 className="text-lg font-semibold text-slate-700 mb-1">No leads yet</h3>
+                <h3 className="text-lg font-semibold text-slate-700 mb-1">No enquiries yet</h3>
                 <p className="text-slate-500">When customers enquire, they'll appear here</p>
               </div>
             </div>
@@ -378,40 +374,47 @@ export default function ProviderDashboard() {
                   key={item.id}
                   className="rounded-2xl border border-slate-200 bg-slate-50 p-5 hover:border-blue-200 transition-colors"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <div className="flex-1">
+                  <div className="flex flex-col gap-4">
+                    {/* Customer Name & Date */}
+                    <div className="flex flex-wrap items-start justify-between gap-2">
                       <h3 className="text-lg font-bold text-slate-900">
                         {item.customer_name}
                       </h3>
-                      
-                      <div className="space-y-1.5 text-sm mt-2">
-                        <p className="text-slate-600 flex items-center gap-2">
-                          <span className="text-slate-400">📞</span>
-                          {item.customer_phone}
-                        </p>
-                        {item.event_type && (
-                          <p className="text-slate-600 flex items-center gap-2">
-                            <span className="text-slate-400">🎬</span>
-                            {item.event_type}
-                          </p>
-                        )}
-                        {item.message && (
-                          <p className="text-slate-600 bg-white rounded-xl px-4 py-2 border border-slate-200 mt-2">
-                            {item.message}
-                          </p>
-                        )}
-                        {item.created_at && (
-                          <p className="text-slate-400 text-xs flex items-center gap-1 mt-2">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                            </svg>
-                            {new Date(item.created_at).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
+                      {item.created_at && (
+                        <span className="text-xs text-slate-400 flex items-center gap-1">
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                          </svg>
+                          {new Date(item.created_at).toLocaleDateString()}
+                        </span>
+                      )}
                     </div>
+                    
+                    {/* Phone */}
+                    <p className="text-slate-600 flex items-center gap-2 text-sm">
+                      <span className="text-slate-400">📞</span>
+                      <span className="font-medium">{item.customer_phone}</span>
+                    </p>
 
-                    <div className="flex flex-row gap-3 sm:w-auto">
+                    {/* Event Type */}
+                    {item.event_type && (
+                      <p className="text-slate-600 flex items-center gap-2 text-sm">
+                        <span className="text-slate-400">🎬</span>
+                        {item.event_type}
+                      </p>
+                    )}
+
+                    {/* Message */}
+                    {item.message && (
+                      <div className="bg-white rounded-xl px-4 py-3 border border-slate-200">
+                        <p className="text-slate-700 text-sm whitespace-pre-wrap">
+                          {item.message}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="flex flex-row gap-3 mt-2">
                       <a
                         href={`tel:${item.customer_phone}`}
                         className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 px-6 py-3 text-center font-semibold text-white transition-all duration-200 hover:shadow-md whitespace-nowrap"
