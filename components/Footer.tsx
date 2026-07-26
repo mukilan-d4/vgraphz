@@ -2,21 +2,19 @@ import Link from "next/link";
 
 export default function Footer() {
   return (
-    <footer className="mt-20 border-t border-slate-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-
+    <footer className="border-t border-slate-200 bg-white mt-20">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
+        
         <div className="grid gap-10 md:grid-cols-4">
-
+          
           {/* Brand */}
-          <div>
+          <div className="md:col-span-1">
             <h2 className="text-2xl font-extrabold">
               <span className="text-slate-900">Vgraph</span>
               <span className="text-blue-600">Z</span>
             </h2>
-
-            <p className="mt-4 leading-7 text-slate-600">
-              VgraphZ helps customers discover trusted photographers,
-              videographers, editors, and creative professionals across India.
+            <p className="mt-4 text-slate-600 leading-relaxed">
+              Connecting you with professional videographers and creative artists across India.
             </p>
           </div>
 
@@ -25,7 +23,6 @@ export default function Footer() {
             <h3 className="text-lg font-semibold text-slate-900">
               Explore
             </h3>
-
             <div className="mt-4 space-y-3">
               <Link
                 href="/providers"
@@ -33,9 +30,14 @@ export default function Footer() {
               >
                 Find Professionals
               </Link>
-
               <Link
-                href="/join-provider"
+                href="/providers"
+                className="block text-slate-600 transition hover:text-blue-600"
+              >
+                Categories
+              </Link>
+              <Link
+                href="/register"
                 className="block text-slate-600 transition hover:text-blue-600"
               >
                 Become a Provider
@@ -48,7 +50,6 @@ export default function Footer() {
             <h3 className="text-lg font-semibold text-slate-900">
               Company
             </h3>
-
             <div className="mt-4 space-y-3">
               <Link
                 href="/about"
@@ -56,21 +57,18 @@ export default function Footer() {
               >
                 About Us
               </Link>
-
               <Link
                 href="/contact"
                 className="block text-slate-600 transition hover:text-blue-600"
               >
                 Contact
               </Link>
-
               <Link
                 href="/privacy-policy"
                 className="block text-slate-600 transition hover:text-blue-600"
               >
                 Privacy Policy
               </Link>
-
               <Link
                 href="/terms"
                 className="block text-slate-600 transition hover:text-blue-600"
@@ -80,39 +78,40 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Contact */}
+          {/* Contact & Help */}
           <div>
             <h3 className="text-lg font-semibold text-slate-900">
               Contact
             </h3>
-
             <div className="mt-4 space-y-3 text-slate-600">
-
-              <a
-                href="mailto:support@vgraphz.com"
-                className="flex items-center gap-2 transition hover:text-blue-600"
-                aria-label="Email VgraphZ Support"
-              >
+              <p className="flex items-center gap-2">
                 <span>📧</span>
-                support@vgraphz.com
-              </a>
-
+                <a href="mailto:vgraphz1@gmail.com" className="hover:text-blue-600 transition">
+                  vgraphz1@gmail.com
+                </a>
+              </p>
               <p className="flex items-center gap-2">
                 <span>📍</span>
                 India
               </p>
-
               <p className="flex items-center gap-2">
                 <span>🕒</span>
                 Mon – Sat | 9 AM – 7 PM
               </p>
-
+              {/* Help Option */}
+              <Link
+                href="mailto:vgraphz1@gmail.com?subject=Help%20Request%20-%20VgraphZ"
+                className="flex items-center gap-2 text-blue-600 font-medium hover:text-blue-700 transition"
+              >
+                <span>🆘</span>
+                Help & Support
+              </Link>
             </div>
           </div>
 
         </div>
 
-        {/* Bottom */}
+        {/* Bottom Bar */}
         <div className="mt-12 border-t border-slate-200 pt-6 text-center text-sm text-slate-500">
           © {new Date().getFullYear()} VgraphZ. All rights reserved.
         </div>
