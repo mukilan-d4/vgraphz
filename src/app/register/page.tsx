@@ -27,6 +27,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("Weak");
+  const [passwordMessage, setPasswordMessage] = useState("");
   const [phone, setPhone] = useState("");
   const [category, setCategory] = useState("");
   const [district, setDistrict] = useState("");
@@ -156,29 +157,56 @@ export default function RegisterPage() {
     return null;
   };
 
-  // ✅ Fixed password strength check - will change Weak → Medium → Strong
+  // ✅ Password strength with proper flow: Weak → Medium → Strong
   function checkStrength(value: string) {
     setPassword(value);
-    let strength = "Weak";
     
-    if (
-      value.length >= 8 &&
-      /[A-Z]/.test(value) &&
-      /[a-z]/.test(value) &&
-      /[0-9]/.test(value) &&
-      /[^A-Za-z0-9]/.test(value)
-    ) {
-      strength = "Strong";
-    } else if (
-      value.length >= 6 &&
-      /[A-Z]/.test(value) &&
-      /[a-z]/.test(value) &&
-      /[0-9]/.test(value)
-    ) {
-      strength = "Medium";
+    if (!value) {
+      setPasswordStrength("Weak");
+      setPasswordMessage("Enter a password");
+      return;
     }
+
+    const hasLength = value.length >= 8;
+    const hasUppercase = /[A-Z]/.test(value);
+    const hasLowercase = /[a-z]/.test(value);
+    const hasNumber = /[0-9]/.test(value);
+    const hasSpecial = /[^A-Za-z0-9]/.test(value);
+
+    // 🟢 Strong: 8+ chars with uppercase, lowercase, number, and special
+    if (hasLength && hasUppercase && hasLowercase && hasNumber && hasSpecial) {
+      setPasswordStrength("Strong");
+      setPasswordMessage("✓ Strong password");
+      return;
+    }
+
+    // 🟡 Medium: 8+ chars with at least 3 of the 4 requirements
+    const requirementsCount = [hasUppercase, hasLowercase, hasNumber, hasSpecial].filter(Boolean).length;
+    if (hasLength && requirementsCount >= 3) {
+      setPasswordStrength("Medium");
+      const missing = [];
+      if (!hasSpecial && requirementsCount >= 3) missing.push("special character (!@#$%&*)");
+      if (!hasUppercase && requirementsCount === 3) missing.push("uppercase letter");
+      if (!hasLowercase && requirementsCount === 3) missing.push("lowercase letter");
+      if (!hasNumber && requirementsCount === 3) missing.push("number");
+      setPasswordMessage(missing.length > 0 ? `Add a ${missing.join(', ')}` : "Medium strength");
+      return;
+    }
+
+    // 🔴 Weak: Everything else
+    setPasswordStrength("Weak");
+    const missing = [];
+    if (!hasLength) missing.push(`${8 - value.length} more characters`);
+    if (!hasUppercase) missing.push("uppercase letter");
+    if (!hasLowercase) missing.push("lowercase letter");
+    if (!hasNumber) missing.push("number");
+    if (!hasSpecial && value.length >= 8) missing.push("special character");
     
-    setPasswordStrength(strength);
+    if (missing.length === 0) {
+      setPasswordMessage("Add more variety to your password");
+    } else {
+      setPasswordMessage(`Add ${missing.join(', ')}`);
+    }
   }
 
   async function register(e: React.FormEvent) {
@@ -382,16 +410,24 @@ export default function RegisterPage() {
                 </button>
               </div>
               {password.length > 0 && (
-                <>
-                  <p className="mt-2 text-sm">
-                    Strength : <span className={getStrengthColor()}>{passwordStrength}</span>
+                <div className="mt-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Strength:</span>
+                    <span className={`text-sm font-medium ${getStrengthColor()}`}>{passwordStrength}</span>
+                    <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full transition-all duration-300 ${
+                          passwordStrength === "Strong" ? "w-full bg-green-500" :
+                          passwordStrength === "Medium" ? "w-2/3 bg-yellow-500" :
+                          "w-1/3 bg-red-500"
+                        }`}
+                      />
+                    </div>
+                  </div>
+                  <p className={`mt-1 text-xs ${getStrengthColor()}`}>
+                    {passwordMessage}
                   </p>
-                  {password.length < 8 && (
-                    <p className="mt-1 text-xs text-red-600 font-medium">
-                      Minimum 8 characters ({password.length}/8)
-                    </p>
-                  )}
-                </>
+                </div>
               )}
             </div>
 
