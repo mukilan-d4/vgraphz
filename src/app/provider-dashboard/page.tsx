@@ -14,6 +14,7 @@ export default function ProviderDashboard() {
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [updatingPassword, setUpdatingPassword] = useState(false);
+  const [showEnquiries, setShowEnquiries] = useState(true);
 
   useEffect(() => {
     loadDashboard();
@@ -103,6 +104,51 @@ export default function ProviderDashboard() {
     setUpdatingPassword(false);
   }
 
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  // Group enquiries by customer name and phone
+  const groupedEnquiries = enquiries.reduce((acc, enquiry) => {
+    const key = `${enquiry.customer_name}_${enquiry.customer_phone}`;
+    if (!acc[key]) {
+      acc[key] = {
+        customer_name: enquiry.customer_name,
+        customer_phone: enquiry.customer_phone,
+        messages: [],
+        last_date: enquiry.created_at,
+        all_read: true // Track if all messages are read
+      };
+    }
+    acc[key].messages.push(enquiry);
+    if (enquiry.status !== 'read') {
+      acc[key].all_read = false;
+    }
+    return acc;
+  }, {} as Record<string, { customer_name: string; customer_phone: string; messages: any[]; last_date: string; all_read: boolean }>);
+
+  const groupedList = Object.values(groupedEnquiries);
+
+  // Mark messages as read
+  const markAsRead = async (messages: any[]) => {
+    const unreadIds = messages.filter(m => m.status !== 'read').map(m => m.id);
+    if (unreadIds.length === 0) return;
+
+    try {
+      await supabase
+        .from("enquiries")
+        .update({ status: 'read' })
+        .in('id', unreadIds);
+      
+      // Reload to update UI
+      loadDashboard();
+    } catch (error) {
+      console.error("Error marking as read:", error);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -149,6 +195,8 @@ export default function ProviderDashboard() {
       </main>
     );
   }
+
+  const hasUnread = groupedList.some(group => !group.all_read);
 
   return (
     <main className="min-h-screen bg-slate-50 py-12">
@@ -249,10 +297,9 @@ export default function ProviderDashboard() {
           </div>
         )}
 
-        {/* Profile Card - No Image */}
+        {/* Profile Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            {/* Profile Icon instead of image */}
             <div className="h-24 w-24 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
               <span className="text-3xl font-bold text-blue-600">
                 {provider.name?.charAt(0) || "U"}
@@ -341,99 +388,147 @@ export default function ProviderDashboard() {
           </p>
         </div>
 
-        {/* Enquiries Section - Show full details */}
+        {/* Enquiries Section - Grouped by customer */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <div>
               <h2 className="text-2xl font-bold text-slate-900">Customer Enquiries</h2>
               <p className="text-slate-500 text-sm">Contact customers directly by phone or WhatsApp</p>
             </div>
-            <span className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-full text-sm font-semibold">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
-              </svg>
-              {enquiries.length} {enquiries.length === 1 ? "Lead" : "Leads"}
-            </span>
+            <div className="flex items-center gap-3">
+              {hasUnread && (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
+                  <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                  New
+                </span>
+              )}
+              <button
+                onClick={() => setShowEnquiries(!showEnquiries)}
+                className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition text-sm"
+              >
+                <span>{showEnquiries ? 'Hide' : 'Show'}</span>
+                {showEnquiries ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                )}
+              </button>
+            </div>
           </div>
 
-          {enquiries.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="bg-slate-50 rounded-2xl p-8">
-                <svg className="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                <h3 className="text-lg font-semibold text-slate-700 mb-1">No enquiries yet</h3>
-                <p className="text-slate-500">When customers enquire, they'll appear here</p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {enquiries.map((item) => (
-                <div
-                  key={item.id}
-                  className="rounded-2xl border border-slate-200 bg-slate-50 p-5 hover:border-blue-200 transition-colors"
-                >
-                  <div className="flex flex-col gap-4">
-                    {/* Customer Name & Date */}
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <h3 className="text-lg font-bold text-slate-900">
-                        {item.customer_name}
-                      </h3>
-                      {item.created_at && (
-                        <span className="text-xs text-slate-400 flex items-center gap-1">
-                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                          </svg>
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </span>
-                      )}
-                    </div>
-                    
-                    {/* Phone */}
-                    <p className="text-slate-600 flex items-center gap-2 text-sm">
-                      <span className="text-slate-400">📞</span>
-                      <span className="font-medium">{item.customer_phone}</span>
-                    </p>
-
-                    {/* Event Type */}
-                    {item.event_type && (
-                      <p className="text-slate-600 flex items-center gap-2 text-sm">
-                        <span className="text-slate-400">🎬</span>
-                        {item.event_type}
-                      </p>
-                    )}
-
-                    {/* Message */}
-                    {item.message && (
-                      <div className="bg-white rounded-xl px-4 py-3 border border-slate-200">
-                        <p className="text-slate-700 text-sm whitespace-pre-wrap">
-                          {item.message}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-row gap-3 mt-2">
-                      <a
-                        href={`tel:${item.customer_phone}`}
-                        className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 px-6 py-3 text-center font-semibold text-white transition-all duration-200 hover:shadow-md whitespace-nowrap"
-                      >
-                        📞 Call
-                      </a>
-                      <a
-                        href={`https://wa.me/${item.customer_phone}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-6 py-3 text-center font-semibold text-white transition-all duration-200 hover:shadow-md whitespace-nowrap"
-                      >
-                        💬 WhatsApp
-                      </a>
-                    </div>
+          {showEnquiries && (
+            <>
+              {groupedList.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="bg-slate-50 rounded-2xl p-8">
+                    <svg className="w-16 h-16 mx-auto text-slate-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                    <h3 className="text-lg font-semibold text-slate-700 mb-1">No enquiries yet</h3>
+                    <p className="text-slate-500">When customers enquire, they'll appear here</p>
                   </div>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <div className="space-y-4 mt-4">
+                  {groupedList.map((group, index) => {
+                    const hasUnreadInGroup = !group.all_read;
+                    const latestMessage = group.messages[0];
+
+                    return (
+                      <div
+                        key={index}
+                        className={`rounded-2xl border p-5 transition-colors ${
+                          hasUnreadInGroup 
+                            ? 'border-blue-300 bg-blue-50/50 hover:border-blue-400' 
+                            : 'border-slate-200 bg-slate-50 hover:border-blue-200'
+                        }`}
+                      >
+                        <div className="flex flex-col gap-3">
+                          {/* Customer Header */}
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-3">
+                              <h3 className="text-lg font-bold text-slate-900">
+                                {group.customer_name}
+                              </h3>
+                              {hasUnreadInGroup && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-500 text-white rounded-full text-xs font-medium animate-pulse">
+                                  ● New
+                                </span>
+                              )}
+                            </div>
+                            {group.last_date && (
+                              <span className="text-xs text-slate-400 flex items-center gap-1">
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {formatDate(group.last_date)}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Phone */}
+                          <p className="text-slate-600 flex items-center gap-2 text-sm">
+                            <span className="text-slate-400">📞</span>
+                            <span className="font-medium">{group.customer_phone}</span>
+                          </p>
+
+                          {/* Message count */}
+                          <p className="text-xs text-slate-400">
+                            {group.messages.length} message{group.messages.length > 1 ? 's' : ''}
+                          </p>
+
+                          {/* Latest Message Preview */}
+                          {latestMessage && (
+                            <div className="bg-white rounded-xl px-4 py-3 border border-slate-200">
+                              <p className="text-slate-700 text-sm whitespace-pre-wrap line-clamp-3">
+                                {latestMessage.message || "No message provided"}
+                              </p>
+                              {latestMessage.event_type && (
+                                <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                  <span>🎬</span> {latestMessage.event_type}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Mark as Read Button */}
+                          {hasUnreadInGroup && (
+                            <button
+                              onClick={() => markAsRead(group.messages)}
+                              className="text-xs text-blue-600 hover:text-blue-700 font-medium self-start"
+                            >
+                              ✓ Mark as read
+                            </button>
+                          )}
+
+                          {/* Action Buttons */}
+                          <div className="flex flex-row gap-3 mt-1">
+                            <a
+                              href={`tel:${group.customer_phone}`}
+                              className="flex-1 rounded-xl bg-blue-600 hover:bg-blue-700 px-6 py-3 text-center font-semibold text-white transition-all duration-200 hover:shadow-md whitespace-nowrap"
+                            >
+                              📞 Call
+                            </a>
+                            <a
+                              href={`https://wa.me/${group.customer_phone}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-6 py-3 text-center font-semibold text-white transition-all duration-200 hover:shadow-md whitespace-nowrap"
+                            >
+                              💬 WhatsApp
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
