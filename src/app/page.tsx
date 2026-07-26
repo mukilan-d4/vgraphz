@@ -61,7 +61,7 @@ export default function Home() {
 
   // Get Google Maps Directions link
   const getDirectionsLink = (address: string) => {
-    if (!address || !address.trim()) return null;
+    if (!address || !address.trim()) return "#";
     const encodedAddress = encodeURIComponent(address.trim());
     return `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
   };
