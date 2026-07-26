@@ -4,9 +4,29 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
+// Define types
+interface Enquiry {
+  id: number;
+  provider_id: number;
+  customer_name: string;
+  customer_phone: string;
+  event_type: string | null;
+  message: string | null;
+  status: string | null;
+  created_at: string;
+}
+
+interface GroupedEnquiry {
+  customer_name: string;
+  customer_phone: string;
+  messages: Enquiry[];
+  last_date: string;
+  all_read: boolean;
+}
+
 export default function ProviderDashboard() {
   const [provider, setProvider] = useState<any>(null);
-  const [enquiries, setEnquiries] = useState<any[]>([]);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [newPassword, setNewPassword] = useState("");
@@ -110,8 +130,8 @@ export default function ProviderDashboard() {
     return date.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  // Group enquiries by customer name and phone
-  const groupedEnquiries = enquiries.reduce((acc, enquiry) => {
+  // Group enquiries by customer name and phone - with proper typing
+  const groupedEnquiries = enquiries.reduce<Record<string, GroupedEnquiry>>((acc, enquiry) => {
     const key = `${enquiry.customer_name}_${enquiry.customer_phone}`;
     if (!acc[key]) {
       acc[key] = {
@@ -119,20 +139,24 @@ export default function ProviderDashboard() {
         customer_phone: enquiry.customer_phone,
         messages: [],
         last_date: enquiry.created_at,
-        all_read: true // Track if all messages are read
+        all_read: true
       };
     }
     acc[key].messages.push(enquiry);
     if (enquiry.status !== 'read') {
       acc[key].all_read = false;
     }
+    // Update last_date if this enquiry is newer
+    if (enquiry.created_at > acc[key].last_date) {
+      acc[key].last_date = enquiry.created_at;
+    }
     return acc;
-  }, {} as Record<string, { customer_name: string; customer_phone: string; messages: any[]; last_date: string; all_read: boolean }>);
+  }, {});
 
-  const groupedList = Object.values(groupedEnquiries);
+  const groupedList: GroupedEnquiry[] = Object.values(groupedEnquiries);
 
   // Mark messages as read
-  const markAsRead = async (messages: any[]) => {
+  const markAsRead = async (messages: Enquiry[]) => {
     const unreadIds = messages.filter(m => m.status !== 'read').map(m => m.id);
     if (unreadIds.length === 0) return;
 
@@ -196,7 +220,7 @@ export default function ProviderDashboard() {
     );
   }
 
-  const hasUnread = groupedList.some(group => !group.all_read);
+  const hasUnread = groupedList.some((group) => !group.all_read);
 
   return (
     <main className="min-h-screen bg-slate-50 py-12">
