@@ -156,11 +156,10 @@ export default function RegisterPage() {
     return null;
   };
 
-  // ✅ Fixed password strength check with colors
+  // ✅ Fixed password strength check - will change Weak → Medium → Strong
   function checkStrength(value: string) {
     setPassword(value);
     let strength = "Weak";
-    let color = "text-red-600";
     
     if (
       value.length >= 8 &&
@@ -170,7 +169,6 @@ export default function RegisterPage() {
       /[^A-Za-z0-9]/.test(value)
     ) {
       strength = "Strong";
-      color = "text-green-600";
     } else if (
       value.length >= 6 &&
       /[A-Z]/.test(value) &&
@@ -178,11 +176,9 @@ export default function RegisterPage() {
       /[0-9]/.test(value)
     ) {
       strength = "Medium";
-      color = "text-yellow-600";
     }
     
     setPasswordStrength(strength);
-    return color;
   }
 
   async function register(e: React.FormEvent) {
@@ -390,7 +386,6 @@ export default function RegisterPage() {
                   <p className="mt-2 text-sm">
                     Strength : <span className={getStrengthColor()}>{passwordStrength}</span>
                   </p>
-                  {/* ✅ Show only if password is less than 8 characters */}
                   {password.length < 8 && (
                     <p className="mt-1 text-xs text-red-600 font-medium">
                       Minimum 8 characters ({password.length}/8)
