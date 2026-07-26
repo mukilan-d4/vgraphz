@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
@@ -24,7 +24,8 @@ import {
   Award,
   Languages,
   Truck,
-  CheckCircle
+  CheckCircle,
+  ArrowLeft
 } from "lucide-react";
 
 interface Review {
@@ -37,6 +38,7 @@ interface Review {
 
 export default function ProviderDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const providerId = params.id as string;
 
   const [provider, setProvider] = useState<any>(null);
@@ -87,8 +89,6 @@ export default function ProviderDetailPage() {
         .select("*")
         .eq("id", providerId)
         .single();
-
-      console.log("PROVIDER DATA:", providerData);
 
       if (providerError) {
         console.log(providerError);
@@ -162,129 +162,120 @@ export default function ProviderDetailPage() {
   }
 
   async function handleEditReview(id: string) {
-    if (!editingReviewText.trim()) {
-      setError("Review cannot be empty");
+    if (!editingReviewText.trim()) return;
+    const { error } = await supabase
+      .from("reviews")
+      .update({
+        review: editingReviewText.trim()
+      })
+      .eq("id", id);
+
+    if (error) {
+      setError(error.message);
       return;
     }
 
-    try {
-      setSubmitting(true);
-      const { error } = await supabase
-        .from("reviews")
-        .update({
-          review: editingReviewText.trim()
-        })
-        .eq("id", id);
-
-      if (error) {
-        setError(error.message);
-        setSubmitting(false);
-        return;
-      }
-
-      setReviews(
-        reviews.map((r) =>
-          r.id === id
-            ? {
-                ...r,
-                review: editingReviewText.trim()
-              }
-            : r
-        )
-      );
-      setEditingReviewId(null);
-      setEditingReviewText("");
-      setSuccess("Review updated successfully");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+    setReviews(
+      reviews.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              review: editingReviewText.trim()
+            }
+          : r
+      )
+    );
+    setEditingReviewId(null);
+    setEditingReviewText("");
   }
 
   async function handleDeleteReview(id: string) {
     const ok = confirm("Delete this review?");
     if (!ok) return;
+    const { error } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("id", id);
 
-    try {
-      setSubmitting(true);
-      const { error } = await supabase
-        .from("reviews")
-        .delete()
-        .eq("id", id);
-
-      if (error) {
-        setError(error.message);
-        setSubmitting(false);
-        return;
-      }
-
-      setReviews(reviews.filter((r) => r.id !== id));
-      setReviewCount(reviewCount - 1);
-      setSuccess("Review deleted successfully");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
+    if (error) {
+      setError(error.message);
+      return;
     }
+    setReviews(reviews.filter((r) => r.id !== id));
+    setReviewCount(reviewCount - 1);
   }
 
+  // ✅ FIXED: Handle enquiry submission with fetch
   async function handleEnquirySubmit(e: React.FormEvent) {
     e.preventDefault();
+    
     if (!enquiryName || !enquiryPhone || !enquiryRequirements) {
-      setEnquiryError("Please fill required fields");
+      setEnquiryError("Please fill in all required fields");
       return;
     }
 
     try {
       setEnquirySubmitting(true);
-      const { error } = await supabase
-        .from("enquiries")
-        .insert({
-          provider_id: Number(providerId),
-          rater_id: currentUser?.id || null,
-          name: enquiryName,
-          phone: enquiryPhone,
-          event_type: enquiryEvent,
-          requirements: enquiryRequirements
-        });
+      setEnquiryError("");
+      setEnquirySuccess("");
 
-      if (error) throw error;
+      // ✅ Create FormData with correct field names
+      const formData = new FormData();
+      formData.append("provider_id", providerId);
+      formData.append("customer_name", enquiryName);
+      formData.append("customer_phone", enquiryPhone);
+      formData.append("event_type", enquiryEvent);
+      formData.append("message", enquiryRequirements);
 
-      setEnquirySuccess("Enquiry sent successfully");
-      setEnquiryName("");
-      setEnquiryPhone("");
-      setEnquiryEvent("");
-      setEnquiryRequirements("");
+      const response = await fetch("/api/enquiry", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (response.redirected) {
+        // ✅ Redirect to thanks page
+        window.location.href = response.url;
+        return;
+      }
+
+      const result = await response.json();
+      if (result.error) {
+        setEnquiryError(result.error);
+      } else {
+        setEnquirySuccess("Enquiry sent successfully!");
+        setEnquiryName("");
+        setEnquiryPhone("");
+        setEnquiryEvent("");
+        setEnquiryRequirements("");
+        setShowEnquiryForm(false);
+        
+        setTimeout(() => {
+          router.push("/thanks");
+        }, 1000);
+      }
+
     } catch (err: any) {
-      setEnquiryError(err.message);
+      setEnquiryError(err.message || "Failed to send enquiry");
     } finally {
       setEnquirySubmitting(false);
     }
   }
 
-  // WhatsApp - opens with pre-filled message (like JustDial)
   function handleWhatsApp() {
     if (!provider?.phone) {
       alert("Phone number not available");
       return;
     }
 
-    // Clean phone number: remove spaces, dashes, plus signs
     let phoneNumber = provider.phone.replace(/\s/g, '').replace(/-/g, '').replace(/\+/g, '');
     
-    // Add country code if not present (India +91)
     if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {
       phoneNumber = '91' + phoneNumber;
     }
 
-    // Default message - pre-filled, user clicks send manually
     const defaultMessage = "Hello! I discovered your work on VgraphZ. Would love to connect and discuss my requirements.";
     const encodedMessage = encodeURIComponent(defaultMessage);
     
-    // Opens WhatsApp with message pre-filled (user clicks send)
     window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
   }
 
@@ -319,15 +310,29 @@ export default function ProviderDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-20">
 
-      {/* PROFILE CARD */}
-      <div className="max-w-4xl mx-auto px-4 pt-8">
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+      {/* ===== MOBILE-FRIENDLY HEADER ===== */}
+      <div className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3 px-4 py-3">
+          <Link href="/providers" className="p-1.5 -ml-1.5 rounded-full hover:bg-slate-100 transition">
+            <ArrowLeft size={22} className="text-slate-700" />
+          </Link>
+          <h1 className="text-lg font-bold text-slate-900 truncate flex-1">{provider.name}</h1>
+          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700 border border-green-200">
+            <CheckCircle size={12} />
+            Verified
+          </span>
+        </div>
+      </div>
 
+      {/* ===== PROFILE SECTION ===== */}
+      <div className="px-4 pt-6">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          
           {/* Profile Header */}
-          <div className="flex flex-col items-center pt-8 px-6">
-            <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-200 border-4 border-slate-200">
+          <div className="flex flex-col items-center pt-6 px-4">
+            <div className="w-24 h-24 rounded-full overflow-hidden bg-slate-200 border-4 border-slate-200 shadow-sm">
               {provider.profile_image ? (
                 <img
                   src={provider.profile_image}
@@ -335,271 +340,259 @@ export default function ProviderDetailPage() {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-4xl font-bold text-slate-500">
+                <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-slate-500">
                   {provider.name?.charAt(0)}
                 </div>
               )}
             </div>
 
-            <div className="mt-4 flex items-center gap-2">
-              <h1 className="text-2xl font-bold text-slate-900">
-                {provider.name}
-              </h1>
-              <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                <CheckCircle size={14} className="text-green-600" />
-                Verified
-              </span>
-            </div>
-
-            <p className="text-blue-600 font-semibold text-lg mt-1">
+            <h2 className="mt-3 text-xl font-bold text-slate-900 text-center">
+              {provider.name}
+            </h2>
+            <p className="text-blue-600 font-semibold text-sm">
               {provider.category}
             </p>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 mt-2 text-sm text-slate-600">
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-1.5 text-xs text-slate-500">
               <span className="flex items-center gap-1">
-                <MapPin size={16} />
+                <MapPin size={14} />
                 {provider.district}
               </span>
-              <span>•</span>
+              <span className="text-slate-300">•</span>
               <span>{reviewCount} {reviewCount === 1 ? 'Review' : 'Reviews'}</span>
               {provider.experience && (
                 <>
-                  <span>•</span>
-                  <span>⭐ {provider.experience} Years</span>
+                  <span className="text-slate-300">•</span>
+                  <span>⭐ {provider.experience}Y</span>
                 </>
               )}
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="mt-6 flex flex-wrap justify-center gap-3 w-full">
-              <button
-                onClick={handleCall}
-                className="flex-1 min-w-[100px] flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
-              >
-                <Phone size={18} />
-                Call Now
-              </button>
-              <button
-                onClick={handleWhatsApp}
-                className="flex-1 min-w-[100px] flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
-              >
-                <MessageCircle size={18} />
-                WhatsApp
-              </button>
-              <button
-                onClick={() => setShowEnquiryForm(!showEnquiryForm)}
-                className="flex-1 min-w-[100px] flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
-              >
-                <Send size={18} />
-                Enquiry
-              </button>
-            </div>
+          {/* ===== MOBILE ACTION BUTTONS ===== */}
+          <div className="p-4 grid grid-cols-3 gap-2 border-t border-slate-100 mt-3">
+            <button
+              onClick={handleCall}
+              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 rounded-xl transition-all duration-200 active:scale-95"
+            >
+              <Phone size={16} />
+              Call
+            </button>
+            <button
+              onClick={handleWhatsApp}
+              className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 rounded-xl transition-all duration-200 active:scale-95"
+            >
+              <MessageCircle size={16} />
+              WhatsApp
+            </button>
+            <button
+              onClick={() => setShowEnquiryForm(!showEnquiryForm)}
+              className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium py-2.5 rounded-xl transition-all duration-200 active:scale-95"
+            >
+              <Send size={16} />
+              Enquiry
+            </button>
+          </div>
 
-            {/* Enquiry Form */}
-            {showEnquiryForm && (
-              <form
-                onSubmit={handleEnquirySubmit}
-                className="mt-4 w-full bg-slate-50 p-4 rounded-2xl border border-slate-200"
-              >
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <input
-                    placeholder="Your Name *"
-                    value={enquiryName}
-                    onChange={(e) => setEnquiryName(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                  />
-                  <input
-                    placeholder="Phone Number *"
-                    value={enquiryPhone}
-                    onChange={(e) => setEnquiryPhone(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                  />
-                  <input
-                    placeholder="Event Type"
-                    value={enquiryEvent}
-                    onChange={(e) => setEnquiryEvent(e.target.value)}
-                    className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
-                  />
-                </div>
-
+          {/* ===== ENQUIRY FORM - FIXED ===== */}
+          {showEnquiryForm && !isOwnProfile && (
+            <form
+              onSubmit={handleEnquirySubmit}
+              className="px-4 pb-4 bg-slate-50 border-t border-slate-200"
+            >
+              <div className="pt-4 space-y-3">
+                <input
+                  type="text"
+                  placeholder="Your Name *"
+                  value={enquiryName}
+                  onChange={(e) => setEnquiryName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                  required
+                />
+                <input
+                  type="tel"
+                  placeholder="Phone Number *"
+                  value={enquiryPhone}
+                  onChange={(e) => setEnquiryPhone(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="Event Type (e.g., Wedding)"
+                  value={enquiryEvent}
+                  onChange={(e) => setEnquiryEvent(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                />
                 <textarea
                   placeholder="Your Requirements *"
                   value={enquiryRequirements}
                   onChange={(e) => setEnquiryRequirements(e.target.value)}
-                  className="w-full mt-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 resize-none"
-                  rows={2}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 resize-none"
+                  rows={3}
+                  required
                 />
-
-                <div className="flex justify-center mt-3">
-                  <button
-                    type="submit"
-                    disabled={enquirySubmitting}
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-2.5 rounded-xl transition-all duration-200 hover:shadow-md"
-                  >
-                    {enquirySubmitting ? "Sending..." : "Send Enquiry"}
-                  </button>
-                </div>
-
-                {enquiryError && (
-                  <p className="text-red-600 text-sm mt-2 text-center">{enquiryError}</p>
-                )}
-                {enquirySuccess && (
-                  <p className="text-green-600 text-sm mt-2 text-center">{enquirySuccess}</p>
-                )}
-              </form>
-            )}
-          </div>
-
-          {/* Details Grid */}
-          <div className="px-6 pb-6 mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <h2 className="text-sm font-semibold text-slate-700 mb-1">About</h2>
-                <p className="text-slate-600 text-sm leading-relaxed">
-                  {provider.about || "No description provided."}
-                </p>
+                <button
+                  type="submit"
+                  disabled={enquirySubmitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-all duration-200 active:scale-95"
+                >
+                  {enquirySubmitting ? "Sending..." : "Send Enquiry"}
+                </button>
+                {enquiryError && <p className="text-red-600 text-sm text-center">{enquiryError}</p>}
+                {enquirySuccess && <p className="text-green-600 text-sm text-center">{enquirySuccess}</p>}
               </div>
+            </form>
+          )}
 
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <h2 className="text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                  <MapPin size={16} className="text-blue-600" /> Location
-                </h2>
-                <p className="text-slate-600 text-sm">
-                  {provider.location || provider.district || "Not specified"}
-                </p>
+          {/* Show message if own profile */}
+          {showEnquiryForm && isOwnProfile && (
+            <div className="px-4 pb-4 bg-slate-50 border-t border-slate-200">
+              <div className="pt-4 text-center text-sm text-slate-500">
+                You cannot send enquiry to your own profile
               </div>
-
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <h2 className="text-sm font-semibold text-slate-700 mb-2">Skills</h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {skills.length ? (
-                    skills.map((skill: string, i: number) => (
-                      <span
-                        key={i}
-                        className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-medium"
-                      >
-                        {skill}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-slate-500 text-sm">No skills listed</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <h2 className="text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                  <Award size={16} className="text-amber-500" /> Experience
-                </h2>
-                <p className="text-slate-600 text-sm">
-                  {provider.experience || "0"} Years
-                </p>
-              </div>
-
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <h2 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
-                  <Languages size={16} className="text-emerald-500" /> Languages
-                </h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {languages.length ? (
-                    languages.map((lang: string, i: number) => (
-                      <span
-                        key={i}
-                        className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-medium"
-                      >
-                        {lang}
-                      </span>
-                    ))
-                  ) : (
-                    <p className="text-slate-500 text-sm">No languages listed</p>
-                  )}
-                </div>
-              </div>
-
-              <div className="bg-slate-50 rounded-2xl p-4">
-                <h2 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1">
-                  <Globe size={16} className="text-blue-600" /> Online
-                </h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {provider.website && (
-                    <a href={provider.website} target="_blank" rel="noopener noreferrer" className="bg-white px-2.5 py-1 rounded-full text-xs font-medium text-blue-600 hover:bg-blue-50 transition border border-slate-200">
-                      Website
-                    </a>
-                  )}
-                  {provider.youtube && (
-                    <a href={provider.youtube} target="_blank" rel="noopener noreferrer" className="bg-white px-2.5 py-1 rounded-full text-xs font-medium text-red-600 hover:bg-red-50 transition border border-slate-200">
-                      YouTube
-                    </a>
-                  )}
-                  {provider.instagram && (
-                    <a href={provider.instagram} target="_blank" rel="noopener noreferrer" className="bg-white px-2.5 py-1 rounded-full text-xs font-medium text-pink-600 hover:bg-pink-50 transition border border-slate-200">
-                      Instagram
-                    </a>
-                  )}
-                  {provider.portfolio && (
-                    <a href={provider.portfolio} target="_blank" rel="noopener noreferrer" className="bg-white px-2.5 py-1 rounded-full text-xs font-medium text-purple-600 hover:bg-purple-50 transition border border-slate-200">
-                      Portfolio
-                    </a>
-                  )}
-                  {!provider.website && !provider.youtube && !provider.instagram && !provider.portfolio && (
-                    <p className="text-slate-500 text-sm">No links</p>
-                  )}
-                </div>
-              </div>
-
-              {(provider.delivery || provider.delivery_time) && (
-                <div className="bg-slate-50 rounded-2xl p-4">
-                  <h2 className="text-sm font-semibold text-slate-700 mb-1 flex items-center gap-1">
-                    <Truck size={16} className="text-blue-600" /> Delivery
-                  </h2>
-                  <p className="text-slate-600 text-sm">
-                    {provider.delivery || provider.delivery_time}
-                  </p>
-                </div>
-              )}
-
             </div>
-          </div>
+          )}
         </div>
 
-        {/* REVIEWS SECTION */}
-        <div className="mt-6 bg-white rounded-3xl border border-slate-200 shadow-sm p-6">
+        {/* ===== DETAILS CARDS ===== */}
+        <div className="mt-4 space-y-3">
+          
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-1.5">About</h3>
+            <p className="text-slate-600 text-sm leading-relaxed">
+              {provider.about || "No description provided."}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <MapPin size={16} className="text-blue-600" /> Location
+            </h3>
+            <p className="text-slate-600 text-sm">
+              {provider.location || provider.district || "Not specified"}
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2">Skills</h3>
+            <div className="flex flex-wrap gap-1.5">
+              {skills.length ? (
+                skills.map((skill: string, i: number) => (
+                  <span
+                    key={i}
+                    className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-medium"
+                  >
+                    {skill}
+                  </span>
+                ))
+              ) : (
+                <p className="text-slate-500 text-sm">No skills listed</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <Award size={16} className="text-amber-500" /> Experience
+            </h3>
+            <p className="text-slate-600 text-sm">{provider.experience || "0"} Years</p>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+              <Languages size={16} className="text-emerald-500" /> Languages
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {languages.length ? (
+                languages.map((lang: string, i: number) => (
+                  <span
+                    key={i}
+                    className="bg-emerald-50 text-emerald-700 px-3 py-1 rounded-full text-xs font-medium"
+                  >
+                    {lang}
+                  </span>
+                ))
+              ) : (
+                <p className="text-slate-500 text-sm">No languages listed</p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <h3 className="text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+              <Globe size={16} className="text-blue-600" /> Online
+            </h3>
+            <div className="flex flex-wrap gap-1.5">
+              {provider.website && (
+                <a href={provider.website} target="_blank" rel="noopener noreferrer" className="bg-slate-100 px-3 py-1.5 rounded-full text-xs font-medium text-slate-700 hover:bg-slate-200 transition">
+                  Website
+                </a>
+              )}
+              {provider.youtube && (
+                <a href={provider.youtube} target="_blank" rel="noopener noreferrer" className="bg-red-50 px-3 py-1.5 rounded-full text-xs font-medium text-red-600 hover:bg-red-100 transition">
+                  YouTube
+                </a>
+              )}
+              {provider.instagram && (
+                <a href={provider.instagram} target="_blank" rel="noopener noreferrer" className="bg-pink-50 px-3 py-1.5 rounded-full text-xs font-medium text-pink-600 hover:bg-pink-100 transition">
+                  Instagram
+                </a>
+              )}
+              {provider.portfolio && (
+                <a href={provider.portfolio} target="_blank" rel="noopener noreferrer" className="bg-purple-50 px-3 py-1.5 rounded-full text-xs font-medium text-purple-600 hover:bg-purple-100 transition">
+                  Portfolio
+                </a>
+              )}
+              {!provider.website && !provider.youtube && !provider.instagram && !provider.portfolio && (
+                <p className="text-slate-500 text-sm">No links</p>
+              )}
+            </div>
+          </div>
+
+          {(provider.delivery || provider.delivery_time) && (
+            <div className="bg-white rounded-2xl border border-slate-200 p-4">
+              <h3 className="text-sm font-semibold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <Truck size={16} className="text-blue-600" /> Delivery
+              </h3>
+              <p className="text-slate-600 text-sm">{provider.delivery || provider.delivery_time}</p>
+            </div>
+          )}
+        </div>
+
+        {/* ===== REVIEWS SECTION ===== */}
+        <div className="mt-4 bg-white rounded-2xl border border-slate-200 p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-slate-900">
+            <h3 className="text-sm font-semibold text-slate-900">
               Reviews ({reviewCount})
-            </h2>
+            </h3>
             <button
               onClick={() => setShowComments(!showComments)}
-              className="flex items-center gap-2 text-slate-500 hover:text-slate-700 transition"
+              className="flex items-center gap-1.5 text-slate-500 hover:text-slate-700 transition text-sm"
             >
-              <span className="text-sm font-medium">
-                {showComments ? 'Hide' : 'Show'} Comments
+              <span className="text-xs font-medium">
+                {showComments ? 'Hide' : 'Show'}
               </span>
-              {showComments ? (
-                <ChevronUp size={20} />
-              ) : (
-                <ChevronDown size={20} />
-              )}
+              {showComments ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
             </button>
           </div>
 
           {/* Write Review - Always Visible */}
           {!isOwnProfile && (
-            <div className="mt-4">
+            <div className="mt-3">
               <textarea
                 value={reviewText}
                 onChange={(e) => setReviewText(e.target.value)}
                 placeholder="Write your review..."
                 className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-4 focus:ring-blue-500/10 resize-none"
-                rows={4}
+                rows={3}
               />
-              {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
-              {success && <p className="text-green-600 text-sm mt-2">{success}</p>}
+              {error && <p className="text-red-600 text-xs mt-1.5">{error}</p>}
+              {success && <p className="text-green-600 text-xs mt-1.5">{success}</p>}
               <button
                 onClick={handleSubmitReview}
                 disabled={submitting}
-                className="mt-3 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-md"
+                className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2.5 rounded-xl transition-all duration-200 active:scale-95"
               >
                 {submitting ? "Submitting..." : "Submit Review"}
               </button>
@@ -607,27 +600,25 @@ export default function ProviderDetailPage() {
           )}
 
           {isOwnProfile && (
-            <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 text-amber-700 text-sm">
+            <div className="mt-3 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-700 text-xs text-center">
               You cannot review your own profile
             </div>
           )}
 
           {/* Comments */}
           {showComments && (
-            <div className="mt-6 space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="mt-4 space-y-3 max-h-[300px] overflow-y-auto pr-1 custom-scrollbar">
               {reviews.length === 0 ? (
-                <p className="text-slate-500 text-sm">No reviews yet</p>
+                <p className="text-slate-500 text-sm text-center py-4">No reviews yet</p>
               ) : (
                 reviews.map((review) => (
-                  <div key={review.id} className="border-b border-slate-100 pb-4 last:border-0">
+                  <div key={review.id} className="border-b border-slate-100 pb-3 last:border-0">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                        <User size={16} className="text-blue-600" />
+                      <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center">
+                        <User size={14} className="text-blue-600" />
                       </div>
-                      <span className="font-semibold text-slate-900 text-sm">
-                        User
-                      </span>
-                      <span className="text-xs text-slate-400">
+                      <span className="font-semibold text-slate-900 text-sm">User</span>
+                      <span className="text-xs text-slate-400 ml-auto">
                         {new Date(review.created_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -644,7 +635,7 @@ export default function ProviderDetailPage() {
                           <button
                             onClick={() => handleEditReview(review.id)}
                             disabled={submitting}
-                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition active:scale-95"
                           >
                             <Check size={14} className="inline mr-1" /> Save
                           </button>
@@ -658,19 +649,19 @@ export default function ProviderDetailPage() {
                       </div>
                     ) : (
                       <>
-                        <p className="mt-2 text-slate-700 text-sm">{review.review}</p>
-                        <div className="flex gap-4 mt-2">
+                        <p className="mt-1.5 text-slate-700 text-sm">{review.review}</p>
+                        <div className="flex gap-3 mt-1.5">
                           <button
                             onClick={() => startEditing(review)}
                             className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
                           >
-                            <Edit size={14} /> Edit
+                            <Edit size={13} /> Edit
                           </button>
                           <button
                             onClick={() => handleDeleteReview(review.id)}
                             className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
                           >
-                            <Trash2 size={14} /> Delete
+                            <Trash2 size={13} /> Delete
                           </button>
                         </div>
                       </>
@@ -683,9 +674,29 @@ export default function ProviderDetailPage() {
         </div>
       </div>
 
+      {/* ===== BOTTOM FLOATING ACTION BAR ===== */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-4 py-3 shadow-lg z-50">
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={handleCall}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-all duration-200 active:scale-95"
+          >
+            <Phone size={18} />
+            Call Now
+          </button>
+          <button
+            onClick={handleWhatsApp}
+            className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl transition-all duration-200 active:scale-95"
+          >
+            <MessageCircle size={18} />
+            WhatsApp
+          </button>
+        </div>
+      </div>
+
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
+          width: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
           background: #f1f5f9;
