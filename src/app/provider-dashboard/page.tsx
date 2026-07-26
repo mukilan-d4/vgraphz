@@ -266,6 +266,7 @@ export default function ProviderDashboard() {
               </h2>
               <p className="text-slate-600">{provider.category}</p>
               <div className="flex flex-wrap items-center gap-3 mt-2">
+                {/* ✅ Updated Status Badge */}
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${
                   provider.status === "approved" 
                     ? "bg-emerald-50 text-emerald-700" 
@@ -282,7 +283,7 @@ export default function ProviderDashboard() {
                   }`}></span>
                   {provider.status === "approved" ? "✅ Approved" : 
                    provider.status === "rejected" ? "❌ Rejected" : 
-                   "⏳ Pending Approval"}
+                   "⏳ Under Review"}
                 </span>
                 {provider.district && (
                   <span className="text-slate-500 text-sm flex items-center gap-1">
@@ -294,6 +295,17 @@ export default function ProviderDashboard() {
                   </span>
                 )}
               </div>
+              {/* ✅ Professional Pending Message */}
+              {provider.status === "pending" && (
+                <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                  <p className="text-sm text-amber-700 font-medium">
+                    ⏳ We're reviewing your profile. This typically takes 15 minutes.
+                  </p>
+                  <p className="text-xs text-amber-600 mt-1">
+                    You'll receive a confirmation email once approved.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
