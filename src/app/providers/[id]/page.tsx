@@ -64,16 +64,6 @@ export default function ProviderDetailPage() {
   
   const [showComments, setShowComments] = useState(true);
 
-  // Generate a simple session ID for non-logged-in users
-  const getSessionId = () => {
-    let sessionId = localStorage.getItem('review_session_id');
-    if (!sessionId) {
-      sessionId = 'guest_' + Date.now() + '_' + Math.random().toString(36).substring(2, 15);
-      localStorage.setItem('review_session_id', sessionId);
-    }
-    return sessionId;
-  };
-
   useEffect(() => {
     loadData();
   }, [providerId]);
@@ -145,17 +135,13 @@ export default function ProviderDetailPage() {
     try {
       setSubmitting(true);
       
-      // Get session ID for non-logged-in users
-      const sessionId = getSessionId();
-      
       const { data, error } = await supabase
         .from("reviews")
         .insert({
           provider_id: Number(providerId),
           rater_id: currentUser?.id || null,
           rater_name: reviewerName.trim() || "User",
-          review: reviewText.trim(),
-          session_id: currentUser?.id ? null : sessionId
+          review: reviewText.trim()
         })
         .select()
         .single();
@@ -174,18 +160,6 @@ export default function ProviderDetailPage() {
       setSubmitting(false);
     }
   }
-
-  // Check if current user is the author of a review
-  const isReviewAuthor = (review: Review) => {
-    if (currentUser && review.rater_id === currentUser.id) {
-      return true;
-    }
-    // For non-logged-in users, check session ID
-    const sessionId = localStorage.getItem('review_session_id');
-    // You would need to store session_id in the database too
-    // For now, this will work for logged-in users
-    return false;
-  };
 
   function startEditing(review: Review) {
     setEditingReviewId(review.id);
@@ -600,7 +574,7 @@ export default function ProviderDetailPage() {
             </button>
           </div>
 
-          {/* ✅ Write Review - Visible to everyone EXCEPT the profile owner */}
+          {/* Write Review - Visible to everyone EXCEPT the profile owner */}
           {!isOwnProfile && (
             <div className="mt-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
@@ -688,23 +662,21 @@ export default function ProviderDetailPage() {
                     ) : (
                       <>
                         <p className="mt-2 text-slate-700 text-sm">{review.review}</p>
-                        {/* ✅ Show Edit/Delete for logged-in users who wrote the review */}
-                        {currentUser && review.rater_id === currentUser.id && (
-                          <div className="flex gap-4 mt-2">
-                            <button
-                              onClick={() => startEditing(review)}
-                              className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
-                            >
-                              <Edit size={14} /> Edit
-                            </button>
-                            <button
-                              onClick={() => handleDeleteReview(review.id)}
-                              className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
-                            >
-                              <Trash2 size={14} /> Delete
-                            </button>
-                          </div>
-                        )}
+                        {/* ✅ Edit and Delete buttons for EVERY review */}
+                        <div className="flex gap-4 mt-2">
+                          <button
+                            onClick={() => startEditing(review)}
+                            className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
+                          >
+                            <Edit size={14} /> Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteReview(review.id)}
+                            className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        </div>
                       </>
                     )}
                   </div>
