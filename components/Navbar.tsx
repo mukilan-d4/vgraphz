@@ -33,12 +33,10 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Logo */}
           <Link href="/" className="text-2xl font-bold text-slate-900">
             VgraphZ
           </Link>
 
-          {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-6">
             <Link href="/" className="text-slate-600 hover:text-blue-600 transition">
               Home
@@ -48,15 +46,13 @@ export default function Navbar() {
             </Link>
             
             {user ? (
-              <>
-                <Link
-                  href="/provider-dashboard"
-                  className="text-slate-600 hover:text-blue-600 transition flex items-center gap-2"
-                >
-                  Dashboard
-                  <NotificationBadge />
-                </Link>
-              </>
+              <Link
+                href="/provider-dashboard"
+                className="text-slate-600 hover:text-blue-600 transition flex items-center gap-2"
+              >
+                Dashboard
+                <NotificationBadge />
+              </Link>
             ) : (
               <>
                 <Link
@@ -75,7 +71,6 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden p-2 rounded-xl hover:bg-slate-100 transition"
@@ -89,7 +84,6 @@ export default function Navbar() {
           </button>
         </div>
 
-        {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-slate-200 bg-white">
             <div className="flex flex-col space-y-3">

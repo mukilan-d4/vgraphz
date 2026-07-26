@@ -75,6 +75,10 @@ export default function ProviderDashboard() {
       .eq("provider_id", providerData.id)
       .order("created_at", { ascending: false });
 
+    if (enquiryError) {
+      console.error("Error loading enquiries:", enquiryError);
+    }
+
     setEnquiries(enquiryData || []);
 
     // Mark new enquiries as read
@@ -137,9 +141,14 @@ export default function ProviderDashboard() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return date.toLocaleDateString('en-IN', { 
+      day: '2-digit', 
+      month: '2-digit', 
+      year: 'numeric' 
+    });
   };
 
+  // Group enquiries by customer
   const groupedEnquiries = enquiries.reduce<Record<string, GroupedEnquiry>>((acc, enquiry) => {
     const key = `${enquiry.name}_${enquiry.phone}`;
     if (!acc[key]) {
@@ -162,6 +171,7 @@ export default function ProviderDashboard() {
   }, {});
 
   const groupedList: GroupedEnquiry[] = Object.values(groupedEnquiries);
+  const hasUnread = groupedList.some((group) => !group.all_read);
 
   if (loading) {
     return (
@@ -209,8 +219,6 @@ export default function ProviderDashboard() {
       </main>
     );
   }
-
-  const hasUnread = groupedList.some((group) => !group.all_read);
 
   return (
     <main className="min-h-screen bg-slate-50 py-12">
@@ -450,8 +458,6 @@ export default function ProviderDashboard() {
                 <div className="space-y-4 mt-4">
                   {groupedList.map((group, index) => {
                     const hasUnreadInGroup = !group.all_read;
-                    const latestMessage = group.messages[0];
-
                     return (
                       <div
                         key={index}

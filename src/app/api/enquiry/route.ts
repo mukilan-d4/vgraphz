@@ -1,53 +1,61 @@
-import { supabase } from "@/lib/supabase";
 import { NextResponse } from "next/server";
+import { supabase } from "@/lib/supabase";
 
-export async function POST(req: Request) {
-  const formData = await req.formData();
+export async function POST(request: Request) {
+  try {
+    const formData = await request.formData();
+    
+    const provider_id = formData.get("provider_id");
+    const customer_name = formData.get("customer_name");
+    const customer_phone = formData.get("customer_phone");
+    const event_type = formData.get("event_type");
+    const message = formData.get("message");
 
-  const provider_id = formData.get("provider_id");
-  const customer_name = formData.get("customer_name");
-  const customer_phone = formData.get("customer_phone");
-  const event_type = formData.get("event_type");
-  const message = formData.get("message");
+    if (!provider_id || !customer_name || !customer_phone) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Missing required fields"
+        },
+        { status: 400 }
+      );
+    }
 
-  console.log("📝 Enquiry received:", {
-    provider_id,
-    customer_name,
-    customer_phone,
-    event_type,
-    message
-  });
+    const { data, error } = await supabase
+      .from("enquiries")
+      .insert({
+        provider_id: parseInt(provider_id as string),
+        name: customer_name as string,
+        phone: customer_phone as string,
+        event_type: event_type as string || null,
+        requirements: message as string || null,
+        status: "new"
+      })
+      .select();
 
-  if (!customer_phone) {
-    return NextResponse.json(
-      { error: "Phone required" },
-      { status: 400 }
-    );
-  }
+    if (error) {
+      console.error("Enquiry insert error:", error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message
+        },
+        { status: 500 }
+      );
+    }
 
-  // ✅ Convert provider_id to number
-  const { error } = await supabase
-    .from("enquiries")
-    .insert({
-      provider_id: parseInt(provider_id as string),
-      customer_name,
-      customer_phone,
-      event_type,
-      message,
-      status: "new"
+    return NextResponse.redirect(new URL("/thanks", request.url), {
+      status: 303,
     });
 
-  if (error) {
-    console.error("❌ Enquiry insert error:", error);
+  } catch (error) {
+    console.error("Error in enquiry API:", error);
     return NextResponse.json(
-      { error: error.message },
+      {
+        success: false,
+        error: "Server error"
+      },
       { status: 500 }
     );
   }
-
-  console.log("✅ Enquiry saved successfully");
-
-  return NextResponse.redirect(
-    new URL("/thanks", req.url)
-  );
 }
