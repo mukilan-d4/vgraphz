@@ -162,73 +162,47 @@ export default function ProviderDetailPage() {
   }
 
   async function handleEditReview(id: string) {
-    if (!editingReviewText.trim()) {
-      setError("Review cannot be empty");
+    if (!editingReviewText.trim()) return;
+    const { error } = await supabase
+      .from("reviews")
+      .update({
+        review: editingReviewText.trim()
+      })
+      .eq("id", id);
+
+    if (error) {
+      setError(error.message);
       return;
     }
 
-    try {
-      setSubmitting(true);
-      const { error } = await supabase
-        .from("reviews")
-        .update({
-          review: editingReviewText.trim()
-        })
-        .eq("id", id);
-
-      if (error) {
-        setError(error.message);
-        setSubmitting(false);
-        return;
-      }
-
-      setReviews(
-        reviews.map((r) =>
-          r.id === id
-            ? {
-                ...r,
-                review: editingReviewText.trim()
-              }
-            : r
-        )
-      );
-      setEditingReviewId(null);
-      setEditingReviewText("");
-      setSuccess("Review updated successfully");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+    setReviews(
+      reviews.map((r) =>
+        r.id === id
+          ? {
+              ...r,
+              review: editingReviewText.trim()
+            }
+          : r
+      )
+    );
+    setEditingReviewId(null);
+    setEditingReviewText("");
   }
 
   async function handleDeleteReview(id: string) {
     const ok = confirm("Delete this review?");
     if (!ok) return;
+    const { error } = await supabase
+      .from("reviews")
+      .delete()
+      .eq("id", id);
 
-    try {
-      setSubmitting(true);
-      const { error } = await supabase
-        .from("reviews")
-        .delete()
-        .eq("id", id);
-
-      if (error) {
-        setError(error.message);
-        setSubmitting(false);
-        return;
-      }
-
-      setReviews(reviews.filter((r) => r.id !== id));
-      setReviewCount(reviewCount - 1);
-      setSuccess("Review deleted successfully");
-      setTimeout(() => setSuccess(""), 3000);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
+    if (error) {
+      setError(error.message);
+      return;
     }
+    setReviews(reviews.filter((r) => r.id !== id));
+    setReviewCount(reviewCount - 1);
   }
 
   async function handleEnquirySubmit(e: React.FormEvent) {
@@ -265,27 +239,12 @@ export default function ProviderDetailPage() {
     }
   }
 
-  // WhatsApp - opens with pre-filled message (like JustDial)
   function handleWhatsApp() {
-    if (!provider?.phone) {
-      alert("Phone number not available");
-      return;
+    if (provider?.phone) {
+      const defaultMessage = "Hello! I discovered your work on VgraphZ. Would love to connect and discuss my requirements.";
+      const encodedMessage = encodeURIComponent(defaultMessage);
+      window.open(`https://wa.me/${provider.phone}?text=${encodedMessage}`, "_blank");
     }
-
-    // Clean phone number: remove spaces, dashes, plus signs
-    let phoneNumber = provider.phone.replace(/\s/g, '').replace(/-/g, '').replace(/\+/g, '');
-    
-    // Add country code if not present (India +91)
-    if (!phoneNumber.startsWith('91') && phoneNumber.length === 10) {
-      phoneNumber = '91' + phoneNumber;
-    }
-
-    // Default message - pre-filled, user clicks send manually
-    const defaultMessage = "Hello! I discovered your work on VgraphZ. Would love to connect and discuss my requirements.";
-    const encodedMessage = encodeURIComponent(defaultMessage);
-    
-    // Opens WhatsApp with message pre-filled (user clicks send)
-    window.open(`https://wa.me/${phoneNumber}?text=${encodedMessage}`, "_blank");
   }
 
   function handleCall() {
@@ -395,8 +354,8 @@ export default function ProviderDetailPage() {
               </button>
             </div>
 
-            {/* Enquiry Form */}
-            {showEnquiryForm && (
+            {/* ✅ Enquiry Form - Only show if NOT the profile owner */}
+            {!isOwnProfile && showEnquiryForm && (
               <form
                 onSubmit={handleEnquirySubmit}
                 className="mt-4 w-full bg-slate-50 p-4 rounded-2xl border border-slate-200"
@@ -612,6 +571,12 @@ export default function ProviderDetailPage() {
             </div>
           )}
 
+          {!currentUser && !isOwnProfile && (
+            <div className="mt-4 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-500 text-sm">
+              Please login to leave a review
+            </div>
+          )}
+
           {/* Comments */}
           {showComments && (
             <div className="mt-6 space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
@@ -625,11 +590,16 @@ export default function ProviderDetailPage() {
                         <User size={16} className="text-blue-600" />
                       </div>
                       <span className="font-semibold text-slate-900 text-sm">
-                        User
+                        {review.rater_id === currentUser?.id ? "You" : "User"}
                       </span>
                       <span className="text-xs text-slate-400">
                         {new Date(review.created_at).toLocaleDateString()}
                       </span>
+                      {review.rater_id === currentUser?.id && (
+                        <span className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                          Your Review
+                        </span>
+                      )}
                     </div>
 
                     {editingReviewId === review.id ? (
@@ -643,7 +613,6 @@ export default function ProviderDetailPage() {
                         <div className="flex gap-2 mt-2">
                           <button
                             onClick={() => handleEditReview(review.id)}
-                            disabled={submitting}
                             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition"
                           >
                             <Check size={14} className="inline mr-1" /> Save
@@ -659,20 +628,22 @@ export default function ProviderDetailPage() {
                     ) : (
                       <>
                         <p className="mt-2 text-slate-700 text-sm">{review.review}</p>
-                        <div className="flex gap-4 mt-2">
-                          <button
-                            onClick={() => startEditing(review)}
-                            className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
-                          >
-                            <Edit size={14} /> Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteReview(review.id)}
-                            className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
-                          >
-                            <Trash2 size={14} /> Delete
-                          </button>
-                        </div>
+                        {review.rater_id === currentUser?.id && (
+                          <div className="flex gap-4 mt-2">
+                            <button
+                              onClick={() => startEditing(review)}
+                              className="text-blue-600 hover:text-blue-800 text-xs font-medium flex items-center gap-1 transition"
+                            >
+                              <Edit size={14} /> Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteReview(review.id)}
+                              className="text-red-600 hover:text-red-800 text-xs font-medium flex items-center gap-1 transition"
+                            >
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
                   </div>
