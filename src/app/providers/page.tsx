@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Phone, MessageCircle, Globe, FolderOpen } from "lucide-react";
+import { Phone, MessageCircle, Globe, FolderOpen, Navigation } from "lucide-react";
 
 export default function ProvidersPage() {
   const router = useRouter();
@@ -28,6 +28,13 @@ export default function ProvidersPage() {
     if (provider.youtube) links.push({ type: "youtube", url: provider.youtube, label: "YouTube", emoji: "▶️" });
     if (provider.portfolio) links.push({ type: "portfolio", url: provider.portfolio, label: "Portfolio", emoji: "📁" });
     return links;
+  };
+
+  // Get Google Maps Directions link
+  const getDirectionsLink = (address: string) => {
+    if (!address || !address.trim()) return "#";
+    const encodedAddress = encodeURIComponent(address.trim());
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`;
   };
 
   async function loadProviders() {
@@ -260,6 +267,8 @@ export default function ProvidersPage() {
           {providers.map((provider) => {
             const onlineLinks = getOnlineLinks(provider);
             const hasLinks = onlineLinks.length > 0;
+            const directionsLink = getDirectionsLink(provider.address);
+            const hasAddress = provider.address && provider.address.trim().length > 0;
 
             return (
               <div
@@ -325,25 +334,55 @@ export default function ProvidersPage() {
                   {/* Spacer to push buttons to bottom */}
                   <div className="flex-1"></div>
 
-                  {/* ACTION BUTTONS */}
-                  <div className="mt-4 flex gap-2">
-                    <a
-                      href={`tel:${provider.phone}`}
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
-                    >
-                      <Phone size={16} />
-                      Call
-                    </a>
-                    <a
-                      href={`https://wa.me/${provider.whatsapp || provider.phone}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
-                    >
-                      <MessageCircle size={16} />
-                      WhatsApp
-                    </a>
-                  </div>
+                  {/* ACTION BUTTONS - Direction only shows if address exists */}
+                  {hasAddress ? (
+                    <div className="mt-4 grid grid-cols-3 gap-2">
+                      <a
+                        href={`tel:${provider.phone}`}
+                        className="flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                      >
+                        <Phone size={16} />
+                        <span className="hidden sm:inline">Call</span>
+                      </a>
+                      <a
+                        href={`https://wa.me/${provider.whatsapp || provider.phone}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                      >
+                        <MessageCircle size={16} />
+                        <span className="hidden sm:inline">WhatsApp</span>
+                      </a>
+                      <a
+                        href={directionsLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                      >
+                        <Navigation size={16} />
+                        <span className="hidden sm:inline">Direction</span>
+                      </a>
+                    </div>
+                  ) : (
+                    <div className="mt-4 flex gap-2">
+                      <a
+                        href={`tel:${provider.phone}`}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                      >
+                        <Phone size={16} />
+                        Call
+                      </a>
+                      <a
+                        href={`https://wa.me/${provider.whatsapp || provider.phone}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 rounded-xl transition-all duration-200 hover:shadow-md"
+                      >
+                        <MessageCircle size={16} />
+                        WhatsApp
+                      </a>
+                    </div>
+                  )}
 
                   {/* View Profile Button */}
                   <Link
