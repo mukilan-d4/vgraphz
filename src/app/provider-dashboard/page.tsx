@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
-// Define types
 interface Enquiry {
   id: number;
   provider_id: number;
@@ -56,9 +55,6 @@ export default function ProviderDashboard() {
       .eq("user_id", user.id)
       .maybeSingle();
 
-    console.log("Provider Data:", providerData);
-    console.log("Provider Error:", JSON.stringify(providerError, null, 2));
-
     if (providerError) {
       console.error("Error loading provider:", JSON.stringify(providerError, null, 2));
       setLoading(false);
@@ -78,9 +74,6 @@ export default function ProviderDashboard() {
       .select("*")
       .eq("provider_id", providerData.id)
       .order("created_at", { ascending: false });
-
-    console.log("Enquiries:", enquiryData);
-    console.log("Enquiry Error:", enquiryError);
 
     setEnquiries(enquiryData || []);
     setLoading(false);
@@ -124,13 +117,11 @@ export default function ProviderDashboard() {
     setUpdatingPassword(false);
   }
 
-  // Format date
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
-  // Group enquiries by customer name and phone - with proper typing
   const groupedEnquiries = enquiries.reduce<Record<string, GroupedEnquiry>>((acc, enquiry) => {
     const key = `${enquiry.customer_name}_${enquiry.customer_phone}`;
     if (!acc[key]) {
@@ -146,7 +137,6 @@ export default function ProviderDashboard() {
     if (enquiry.status !== 'read') {
       acc[key].all_read = false;
     }
-    // Update last_date if this enquiry is newer
     if (enquiry.created_at > acc[key].last_date) {
       acc[key].last_date = enquiry.created_at;
     }
@@ -155,7 +145,6 @@ export default function ProviderDashboard() {
 
   const groupedList: GroupedEnquiry[] = Object.values(groupedEnquiries);
 
-  // Mark messages as read
   const markAsRead = async (messages: Enquiry[]) => {
     const unreadIds = messages.filter(m => m.status !== 'read').map(m => m.id);
     if (unreadIds.length === 0) return;
@@ -166,7 +155,6 @@ export default function ProviderDashboard() {
         .update({ status: 'read' })
         .in('id', unreadIds);
       
-      // Reload to update UI
       loadDashboard();
     } catch (error) {
       console.error("Error marking as read:", error);
@@ -226,7 +214,6 @@ export default function ProviderDashboard() {
     <main className="min-h-screen bg-slate-50 py-12">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         
-        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-4xl md:text-5xl font-bold text-slate-900">
@@ -253,7 +240,6 @@ export default function ProviderDashboard() {
           </div>
         </div>
 
-        {/* Change Password Form */}
         {showPasswordForm && (
           <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 mb-8">
             <h2 className="text-xl font-bold text-slate-900 mb-4">Change Password</h2>
@@ -321,7 +307,6 @@ export default function ProviderDashboard() {
           </div>
         )}
 
-        {/* Profile Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center gap-6">
             <div className="h-24 w-24 rounded-2xl bg-blue-100 flex items-center justify-center flex-shrink-0">
@@ -399,7 +384,6 @@ export default function ProviderDashboard() {
           </div>
         </div>
 
-        {/* Total Leads Card */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 mb-8">
           <p className="text-sm font-medium text-slate-500">
             Total Leads
@@ -412,7 +396,6 @@ export default function ProviderDashboard() {
           </p>
         </div>
 
-        {/* Enquiries Section - Grouped by customer */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 md:p-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <div>
@@ -472,7 +455,6 @@ export default function ProviderDashboard() {
                         }`}
                       >
                         <div className="flex flex-col gap-3">
-                          {/* Customer Header */}
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex items-center gap-3">
                               <h3 className="text-lg font-bold text-slate-900">
@@ -494,32 +476,34 @@ export default function ProviderDashboard() {
                             )}
                           </div>
 
-                          {/* Phone */}
                           <p className="text-slate-600 flex items-center gap-2 text-sm">
                             <span className="text-slate-400">📞</span>
                             <span className="font-medium">{group.customer_phone}</span>
                           </p>
 
-                          {/* Message count */}
                           <p className="text-xs text-slate-400">
                             {group.messages.length} message{group.messages.length > 1 ? 's' : ''}
                           </p>
 
-                          {/* Latest Message Preview */}
-                          {latestMessage && (
-                            <div className="bg-white rounded-xl px-4 py-3 border border-slate-200">
-                              <p className="text-slate-700 text-sm whitespace-pre-wrap line-clamp-3">
-                                {latestMessage.message || "No message provided"}
-                              </p>
-                              {latestMessage.event_type && (
-                                <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                                  <span>🎬</span> {latestMessage.event_type}
+                          {/* Show all messages */}
+                          <div className="space-y-2">
+                            {group.messages.map((msg, idx) => (
+                              <div key={idx} className="bg-white rounded-xl px-4 py-3 border border-slate-200">
+                                <p className="text-slate-700 text-sm whitespace-pre-wrap">
+                                  {msg.message || "No message provided"}
                                 </p>
-                              )}
-                            </div>
-                          )}
+                                {msg.event_type && (
+                                  <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                    <span>🎬</span> {msg.event_type}
+                                  </p>
+                                )}
+                                <p className="text-xs text-slate-400 mt-1">
+                                  {formatDate(msg.created_at)}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
 
-                          {/* Mark as Read Button */}
                           {hasUnreadInGroup && (
                             <button
                               onClick={() => markAsRead(group.messages)}
@@ -529,7 +513,6 @@ export default function ProviderDashboard() {
                             </button>
                           )}
 
-                          {/* Action Buttons */}
                           <div className="flex flex-row gap-3 mt-1">
                             <a
                               href={`tel:${group.customer_phone}`}
